@@ -15,6 +15,4 @@ check_PROGRAMS = test tabs tdiv texp tmul tsin tsqr
 
 TESTS = $(check_PROGRAMS)
 
-mpc_TEXINFOS = mpc.texi
-
-##libmpc_la_LIBADD = @LIBOBJS@
+info_TEXINFOS = mpc.texi
