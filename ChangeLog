@@ -1,2 +1,9 @@
+2008-03-14  Philippe THEVENY  <philippe.theveny@loria.fr>
+
+	* NEWS: Added for autotools support
+	* AUTHORS: Added for autotools support
+	* Makefile.am: Added for autotools support
+	* configure.ac: Added for autotools support
+
 Changes since version 0.4.6:
    nothing worth noting for the moment
