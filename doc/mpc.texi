@@ -988,6 +988,21 @@ Set @var{rop} to the inverse tangent of @var{op},
 rounded according to @var{rnd} with the precision of @var{rop}.
 @end deftypefun
 
+@deftypefun int mpc_asinh (mpc_t @var{rop}, mpc_t @var{op}, mpc_rnd_t @var{rnd})
+Set @var{rop} to the inverse hyperbolic sine of @var{op},
+rounded according to @var{rnd} with the precision of @var{rop}.
+@end deftypefun
+
+@deftypefun int mpc_acosh (mpc_t @var{rop}, mpc_t @var{op}, mpc_rnd_t @var{rnd})
+Set @var{rop} to the inverse hyperbolic cosine of @var{op},
+rounded according to @var{rnd} with the precision of @var{rop}.
+@end deftypefun
+
+@deftypefun int mpc_atanh (mpc_t @var{rop}, mpc_t @var{op}, mpc_rnd_t @var{rnd})
+Set @var{rop} to the inverse hyperbolic tangent of @var{op},
+rounded according to @var{rnd} with the precision of @var{rop}.
+@end deftypefun
+
 
 @node Miscellaneous Complex Functions, Advanced Functions, Trigonometric Functions, Complex Functions
 @comment  node-name,  next,  previous,  up
