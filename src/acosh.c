@@ -33,8 +33,8 @@ mpc_acosh (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
   
   if (mpfr_signbit (MPC_IM (op)))
     {
-      inex = mpc_cos (rop, op,
-                      RNDC (MPC_RND_IM (rnd), INV_RND (MPC_RND_RE (rnd))));
+      inex = mpc_acos (rop, op,
+                       RNDC (MPC_RND_IM (rnd), INV_RND (MPC_RND_RE (rnd))));
 
       /* change rop to -i*rop */
       tmp[0] = MPC_RE (rop)[0];
@@ -45,8 +45,8 @@ mpc_acosh (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
     }
   else
     {
-      inex = mpc_cos (rop, op,
-                      RNDC (INV_RND (MPC_RND_IM (rnd)), MPC_RND_RE (rnd)));
+      inex = mpc_acos (rop, op,
+                       RNDC (INV_RND (MPC_RND_IM (rnd)), MPC_RND_RE (rnd)));
 
       /* change rop to i*rop */
       tmp[0] = MPC_RE (rop)[0];
