@@ -151,9 +151,7 @@ mpc_atan (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
           mp_rnd_t rnd_im;
           mpfr_t y;
           mp_prec_t p, p_im;
-          mp_prec_t err;
           int ok;
-          int cmp_2;
 
           rnd_im = MPC_RND_IM (rnd);
           mpfr_init (y);
@@ -163,19 +161,12 @@ mpc_atan (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
           /* a = o(1/y)      with error(a) < 1 ulp(a)
              b = o(atanh(a)) with error(b) < (1+2^{1+Exp(a)-Exp(b)}) ulp(b)
 
-             * if 1 < |y| <= 2 then Exp(a) = 0 and Exp(b) >= 0, so, at most, 2
-               bits of precision are lost.
-             * if |y| > 2, no simplification. */
-          if (s_im)
-            cmp_2 = -mpfr_cmp_si (MPC_IM (op), -2);
-          else
-            cmp_2 = mpfr_cmp_ui (MPC_IM (op), +2);
-          
-          err = 2;
-
+             As |atanh (1/y)| > |1/y| we have Exp(a)-Exp(b) <=0 so, at most,
+             2 bits of precision are lost.
+          */
           do
             {
-              p += mpc_ceil_log2 (p) + err;
+              p += mpc_ceil_log2 (p) + 2;
               mpfr_set_prec (y, p);
               inex_im = mpfr_ui_div (y, 1, MPC_IM (op), GMP_RNDZ);
               if (mpfr_zero_p (y))
@@ -183,16 +174,12 @@ mpc_atan (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
               /* FIXME: should we consider the case with unreasonably huge
                  precision prec(y)>3*exp_min, where atanh(1/Im(op)) could be
                  representable while 1/Im(op) underflows ? */
-              if (cmp_2 > 0)
-                err = 2 + (mp_prec_t)MPC_MAX (MPFR_EXP (y), 0);
 
               /* atanh cannot underflow: |atanh(x)| > |x| for |x| < 1 */
               inex_im |= mpfr_atanh (y, y, GMP_RNDZ);
-              if (cmp_2 > 0)
-                err += MPC_MAX (SAFE_ABS (mp_prec_t, MPFR_EXP (y)), 0);
 
               ok = inex_im == 0 
-                || mpfr_can_round (y, p-err, GMP_RNDZ, rnd_im,
+                || mpfr_can_round (y, p-2, GMP_RNDZ, rnd_im,
                                    p_im + (rnd_im == GMP_RNDN));
             } while (ok == 0);
 
