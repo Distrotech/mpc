@@ -26,14 +26,14 @@ MA 02111-1307, USA. */
    +pi/2 else
    rounded in the direction rnd
 */
-static int
+int
 set_pi_over_2 (mpfr_ptr rop, int s, mpfr_rnd_t rnd)
 {
   int inex;
 
-  inex = mpfr_const_pi (rop, s ? INV_RND (rnd) : rnd);
+  inex = mpfr_const_pi (rop, s < 0 ? INV_RND (rnd) : rnd);
   mpfr_div_2ui (rop, rop, 1, GMP_RNDN);
-  if (s)
+  if (s < 0)
     {
       inex = -inex;
       mpfr_neg (rop, rop, GMP_RNDN);
@@ -47,16 +47,18 @@ mpc_atan (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
 {
   int s_re;
   int s_im;
+  int inex_re;
+  int inex_im;
+  int inex;
 
+  inex_re = 0;
+  inex_im = 0;
   s_re = mpfr_signbit (MPC_RE (op));
   s_im = mpfr_signbit (MPC_IM (op));
 
   /* special values */
   if (mpfr_nan_p (MPC_RE (op)) || mpfr_nan_p (MPC_IM (op)))
     {
-      int inex_re;
-      inex_re = 0;
-
       if (mpfr_nan_p (MPC_RE (op)))
         {
           mpfr_set_nan (MPC_RE (rop));
@@ -73,7 +75,7 @@ mpc_atan (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
         {
           if (mpfr_inf_p (MPC_RE (op)))
             {
-              inex_re = set_pi_over_2 (MPC_RE (rop), s_re, MPC_RND_RE (rnd));
+              inex_re = set_pi_over_2 (MPC_RE (rop), -s_re, MPC_RND_RE (rnd));
               mpfr_set_ui (MPC_IM (rop), 0, GMP_RNDN);
             }
           else
@@ -87,8 +89,7 @@ mpc_atan (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
 
   if (mpfr_inf_p (MPC_RE (op)) || mpfr_inf_p (MPC_IM (op)))
     {
-      int inex_re;
-      inex_re = set_pi_over_2 (MPC_RE (rop), s_re, MPC_RND_RE (rnd));
+      inex_re = set_pi_over_2 (MPC_RE (rop), -s_re, MPC_RND_RE (rnd));
 
       mpfr_set_ui (MPC_IM (rop), 0, GMP_RNDN);
       if (s_im)
@@ -100,10 +101,8 @@ mpc_atan (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
   /* pure real argument */
   if (mpfr_zero_p (MPC_IM (op)))
     {
-      int inex_re;
-
       inex_re = mpfr_atan (MPC_RE (rop), MPC_RE (op), MPC_RND_RE (rnd));
-      
+
       mpfr_set_ui (MPC_IM (rop), 0, GMP_RNDN);
       if (s_im)
         mpc_conj (rop, rop, GMP_RNDN);
@@ -114,12 +113,7 @@ mpc_atan (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
   /* pure imaginary argument */
   if (mpfr_zero_p (MPC_RE (op)))
     {
-      int inex_re;
-      int inex_im;
       int cmp_1;
-
-      inex_re = 0;
-      inex_im = 0;
 
       if (s_im)
         cmp_1 = -mpfr_cmp_si (MPC_IM (op), -1);
@@ -155,7 +149,7 @@ mpc_atan (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
 
           rnd_im = MPC_RND_IM (rnd);
           mpfr_init (y);
-          p_im = mpfr_get_prec (MPC_IM (op));
+          p_im = mpfr_get_prec (MPC_IM (rop));
           p = p_im;
 
           /* a = o(1/y)      with error(a) < 1 ulp(a)
@@ -178,12 +172,12 @@ mpc_atan (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
               /* atanh cannot underflow: |atanh(x)| > |x| for |x| < 1 */
               inex_im |= mpfr_atanh (y, y, GMP_RNDZ);
 
-              ok = inex_im == 0 
+              ok = inex_im == 0
                 || mpfr_can_round (y, p-2, GMP_RNDZ, rnd_im,
                                    p_im + (rnd_im == GMP_RNDN));
             } while (ok == 0);
 
-          inex_re = set_pi_over_2 (MPC_RE (rop), s_re, MPC_RND_RE (rnd));
+          inex_re = set_pi_over_2 (MPC_RE (rop), -s_re, MPC_RND_RE (rnd));
           inex_im = mpfr_set (MPC_IM (rop), y, rnd_im);
           mpfr_clear (y);
         }
@@ -191,10 +185,8 @@ mpc_atan (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
     }
 
   /* regular number argument */
-
   /* TODO */
   mpfr_set_nan (MPC_RE (rop));
   mpfr_set_nan (MPC_IM (rop));
-
   return 0;
 }

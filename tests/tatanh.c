@@ -29,7 +29,7 @@ main (void)
   test_start ();
 
   data_check (f, "atanh.dat");
-  tgeneric (f, 2, 512, 7, 7);
+  tgeneric (f, 2, 1024, 7, 128);
 
   test_end ();
 
