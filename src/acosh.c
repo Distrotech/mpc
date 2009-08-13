@@ -25,35 +25,43 @@ int
 mpc_acosh (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
 {
   /* acosh(z) =
-      i*acos(z), if sign(Im(z)) = +  
+      NaN + i*NaN, if z=0+i*NaN
      -i*acos(z), if sign(Im(z)) = -
+      i*acos(z), if sign(Im(z)) = +  
   */
   mpfr_t tmp;
   int inex;
+
+  if (mpfr_zero_p (MPC_RE (op)) && mpfr_nan_p (MPC_IM (op)))
+    {
+      mpfr_set_nan (MPC_RE (op));
+      mpfr_set_nan (MPC_IM (op));
+      return 0;
+    }
   
   if (mpfr_signbit (MPC_IM (op)))
     {
       inex = mpc_acos (rop, op,
-                       RNDC (MPC_RND_IM (rnd), INV_RND (MPC_RND_RE (rnd))));
+                       RNDC (INV_RND (MPC_RND_IM (rnd)), MPC_RND_RE (rnd)));
 
       /* change rop to -i*rop */
       tmp[0] = MPC_RE (rop)[0];
       MPC_RE (rop)[0] = MPC_IM (rop)[0];
       MPC_IM (rop)[0] = tmp[0];
       MPFR_CHANGE_SIGN (MPC_IM (rop));
-      inex = MPC_INEX (-MPC_INEX_IM (inex), MPC_INEX_RE (inex));
+      inex = MPC_INEX (MPC_INEX_IM (inex), -MPC_INEX_RE (inex));
     }
   else
     {
       inex = mpc_acos (rop, op,
-                       RNDC (INV_RND (MPC_RND_IM (rnd)), MPC_RND_RE (rnd)));
+                       RNDC (MPC_RND_IM (rnd), INV_RND(MPC_RND_RE (rnd))));
 
       /* change rop to i*rop */
       tmp[0] = MPC_RE (rop)[0];
       MPC_RE (rop)[0] = MPC_IM (rop)[0];
       MPC_IM (rop)[0] = tmp[0];
       MPFR_CHANGE_SIGN (MPC_RE (rop));
-      inex = MPC_INEX (MPC_INEX_IM (inex), -MPC_INEX_RE (inex));
+      inex = MPC_INEX (-MPC_INEX_IM (inex), MPC_INEX_RE (inex));
     }
 
   return inex;

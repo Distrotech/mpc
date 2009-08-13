@@ -34,7 +34,7 @@ mpc_asinh (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
   MPFR_CHANGE_SIGN (MPC_RE (z));
 
   inex = mpc_asin (rop, z,
-                   RNDC (MPC_RND_IM (rnd), INV_RND (MPC_RND_RE (rnd))));
+                   RNDC (INV_RND (MPC_RND_IM (rnd)), MPC_RND_RE (rnd)));
 
   /* change rop to -i*rop */
   tmp[0] = MPC_RE (rop)[0];
@@ -42,5 +42,5 @@ mpc_asinh (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
   MPC_IM (rop)[0] = tmp[0];
   MPFR_CHANGE_SIGN (MPC_IM (rop));
 
-  return MPC_INEX (-MPC_INEX_IM (inex), MPC_INEX_RE (inex));
+  return MPC_INEX (MPC_INEX_IM (inex), -MPC_INEX_RE (inex));
 }
