@@ -185,8 +185,151 @@ mpc_atan (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
     }
 
   /* regular number argument */
-  /* TODO */
-  mpfr_set_nan (MPC_RE (rop));
-  mpfr_set_nan (MPC_IM (rop));
-  return 0;
+  {
+    mpfr_t a, b, x, y;
+    mp_prec_t prec, p;
+    mp_exp_t err, expo;
+    int ok;
+    mpfr_t minus_op_re;
+    mp_exp_t op_re_exp;
+    mp_exp_t op_im_exp;
+    mp_rnd_t rnd1, rnd2;
+
+    mpfr_inits (a, b, x, y, (mpfr_ptr)0);
+
+    /* real part: Re(arctan(x+i*y)) = [arctan2(x,1-y) - arctan2(-x,1+y)]/2 */
+    minus_op_re[0] = MPC_RE (op)[0];
+    MPFR_CHANGE_SIGN (minus_op_re);
+    op_re_exp = MPFR_EXP (MPC_RE (op));
+    op_im_exp = MPFR_EXP (MPC_IM (op));
+
+    prec = mpfr_get_prec (MPC_RE (rop)); /* result precision */
+
+    /* a = o(1-y)         error(a) < 1 ulp(a)
+       b = o(atan2(x,a))  error(b) < [1+2^{3+Exp(x)-Exp(a)-Exp(b)}] ulp(b)
+                                     = kb ulp(b)
+       c = o(1+y)         error(c) < 1 ulp(c)
+       d = o(atan2(-x,a)) error(d) < [1+2^{3+Exp(x)-Exp(c)-Exp(d)}] ulp(d)
+                                     = kd ulp(d)
+       e = o(b - d)       error(e) < [1 + kb*2^{Exp(b}-Exp(e)}
+                                        + kd*2^{Exp(d)-Exp(e)}] ulp(e)
+                          error(e) < [1 + 2^{4+Exp(x)-Exp(a)-Exp(e)}
+                                        + 2^{4+Exp(x)-Exp(c)-Exp(e)}] ulp(e)
+                          because |atan(u)| < |u|
+       f = e/2            exact
+    */
+
+    err = 2;
+    /* p: working precision */
+    p = (op_im_exp > 0 || prec > SAFE_ABS (mp_prec_t, op_im_exp)) ? prec
+      : (prec - op_im_exp);
+    rnd1 =
+      mpfr_sgn (MPC_RE (op)) * mpfr_cmp_ui (MPC_IM (op), 1) > 0 ? GMP_RNDZ
+      : mpfr_cmp_ui (MPC_IM (op), 1) > 0 ? GMP_RNDD : GMP_RNDU;
+    rnd2 =
+      mpfr_sgn (MPC_RE (op)) * mpfr_cmp_si (MPC_IM (op), -1) < 0 ? GMP_RNDZ
+      : mpfr_cmp_si (MPC_IM (op), -1) > 0 ? GMP_RNDU : GMP_RNDD;
+
+    do
+      {
+        p += mpc_ceil_log2 (p) + err;
+        mpfr_set_prec (a, p);
+        mpfr_set_prec (b, p);
+        mpfr_set_prec (x, p);
+
+        /* x = upper bound for atan (x/1-y) */
+        mpfr_ui_sub (a, 1, MPC_IM (op), rnd1);
+        mpfr_atan2 (x, MPC_RE (op), a, GMP_RNDU);
+        err = MPFR_EXP (a);
+
+        /* b = lower bound for atan (-x/1+y) */
+        mpfr_add_ui (a, MPC_IM(op), 1, rnd2);
+        mpfr_atan2 (b, minus_op_re, a, GMP_RNDD);
+        expo = MPFR_EXP (a);
+
+        mpfr_sub (x, x, b, GMP_RNDU);
+
+        if (err < expo)
+          err = 4 + op_re_exp - err - MPFR_EXP (x); /* FIXME: may overflow */
+        else if (err == expo)
+          err = 5 + op_re_exp - err - MPFR_EXP (x); /* FIXME: may overflow */
+        else
+          err = 4 + op_re_exp - expo - MPFR_EXP (x); /* FIXME: may overflow */
+        err = err > 0 ? (err + 1) : 1;
+
+        mpfr_div_2ui (x, x, 1, GMP_RNDU);
+
+        ok = mpfr_can_round (x, p - err, GMP_RNDU, GMP_RNDZ,
+                             prec + (MPC_RND_RE (rnd) == GMP_RNDN));
+      } while (ok == 0);
+
+    /* Imaginary part
+       Im(atan(x+I*y)) = 1/4 * [log(x^2+(1+y)^2) - log (x^2 +(1-y)^2)] */
+    prec = mpfr_get_prec (MPC_IM (rop)); /* result precision */
+    mpfr_init (y);
+
+    /* a = o(1+y)    error(a) < 1 ulp(a)
+       b = o(a^2)    error(b) < 5 ulp(b)
+       c = o(x^2)    error(c) < 1 ulp(c)
+       d = o(b+c)    error(d) < 7 ulp(d)
+       e = o(log(d)) error(e) < [1 + 7*2^{2-Exp(e)}] ulp(e) = ke ulp(e)
+       f = o(1-y)    error(f) < 1 ulp(f)
+       g = o(f^2)    error(g) < 5 ulp(g)
+       h = o(g-e)    error(h) < 7 ulp(h)
+       i = o(log(h)) error(i) < [1 + 7*2^{2-Exp(i)}] ulp(i) = ki ulp(i)
+       j = o(e-i)    error(j) < [1 + ke*2^{Exp(e)-Exp(j)}
+                                   + ki*2^{Exp(i)-Exp(j)}] ulp(j)
+                     error(j) < [1 + 2^{Exp(e)-Exp(j)} + 2^{Exp(i)-Exp(j)}
+                                   + 7*2^{3-Exp(j)}] ulp(j)
+       k = j/4       exact
+    */
+    err = 2;
+    p = prec; /* working precision */
+    rnd1 = mpfr_cmp_si (MPC_IM (op), -1) > 0 ? GMP_RNDU : GMP_RNDD;
+    
+    do
+      {
+        p += mpc_ceil_log2 (p) + err;
+        mpfr_set_prec (a, p);
+        mpfr_set_prec (b, p);
+        mpfr_set_prec (y, p);
+
+        /* a = upper bound for log(x^2 + (1+y)^2) */
+        mpfr_add_ui (a, MPC_IM (op), 1, rnd1);
+        mpfr_sqr (a, a, GMP_RNDU);
+        mpfr_sqr (y, MPC_RE (op), GMP_RNDU);
+        mpfr_add (a, a, y, GMP_RNDU);
+        mpfr_log (a, a, GMP_RNDU);
+
+        /* b = lower bound for log(x^2 + (1-y)^2) */
+        mpfr_ui_sub (b, 1, MPC_IM (op), GMP_RNDZ);
+        mpfr_sqr (b, b, GMP_RNDU);
+        mpfr_sqr (y, MPC_RE (op), GMP_RNDZ);
+        mpfr_add (b, b, y, GMP_RNDZ);
+        mpfr_log (b, b, GMP_RNDZ);
+
+        mpfr_sub (y, a, b, GMP_RNDU);
+
+        expo = MPFR_EXP (a) < MPFR_EXP (b) ? MPFR_EXP (b) : MPFR_EXP (a);
+        if (expo < 6)
+          expo = 6;
+        if (MPFR_EXP (y) < expo)
+          err = 4 + expo - MPFR_EXP (y); /* FIXME: possible overflow */
+        else
+          err = 2;
+
+        mpfr_div_2ui (y, y, 2, GMP_RNDN);
+        if (mpfr_zero_p (y))
+          err = 2; /* underflow */
+
+        ok = mpfr_can_round (y, p - err, GMP_RNDU, GMP_RNDZ,
+                             prec + (MPC_RND_IM (rnd) == GMP_RNDN));
+      } while (ok == 0);
+
+
+    inex = mpc_set_fr_fr (rop, x, y, rnd);
+
+    mpfr_clears (a, b, x, y, (mpfr_ptr)0);
+    return inex;
+  }
 }
