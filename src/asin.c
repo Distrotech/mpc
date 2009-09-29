@@ -26,6 +26,11 @@ extern int set_pi_over_2 (mpfr_ptr rop, int s, mpfr_rnd_t rnd);
 int
 mpc_asin (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
 {
+  mp_prec_t p, p_re, p_im;
+  mp_rnd_t rnd_re, rnd_im;
+  mpc_t z1;
+  int inex;
+
   /* special values */
   if (mpfr_nan_p (MPC_RE (op)) || mpfr_nan_p (MPC_IM (op)))
     {
@@ -136,9 +141,88 @@ mpc_asin (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
       return MPC_INEX (0, inex_im);      
     }
 
-  /* regular complex */
-  /* TODO */
-  mpfr_set_nan (MPC_RE (rop));
-  mpfr_set_nan (MPC_RE (rop));
-  return 0;
+  /* regular complex: asin(z) = -i*log(i*z+sqrt(1-z^2)) */
+  p_re = mpfr_get_prec (MPC_RE(rop));
+  p_im = mpfr_get_prec (MPC_IM(rop));
+  rnd_re = MPC_RND_RE(rnd);
+  rnd_im = MPC_RND_IM(rnd);
+  p = p_re >= p_im ? p_re : p_im;
+  mpc_init2 (z1, p);
+  while (1)
+  {
+    mp_exp_t ex, ey, err;
+    p += mpc_ceil_log2 (p) + 3;
+    mpfr_set_prec (MPC_RE(z1), p);
+    mpfr_set_prec (MPC_IM(z1), p);
+
+    /* z1 <- z^2 */
+    mpc_sqr (z1, op, MPC_RNDNN);
+    /* err(x) <= 1/2 ulp(x), err(y) <= 1/2 ulp(y) */
+    /* z1 <- 1-z1 */
+    ex = mpfr_get_exp (MPC_RE(z1));
+    mpfr_ui_sub (MPC_RE(z1), 1, MPC_RE(z1), GMP_RNDN);
+    mpfr_neg (MPC_IM(z1), MPC_IM(z1), GMP_RNDN);
+    ex = ex - mpfr_get_exp (MPC_RE(z1));
+    ex = (ex <= 0) ? 0 : ex;
+    /* err(x) <= 2^ex * ulp(x) */
+    ex = ex + mpfr_get_exp (MPC_RE(z1)) - p;
+    /* err(x) <= 2^ex */
+    ey = mpfr_get_exp (MPC_IM(z1)) - p - 1;
+    /* err(y) <= 2^ey */
+    ex = (ex >= ey) ? ex : ey; /* err(x), err(y) <= 2^ex, i.e., the norm
+                                  of the error is bounded by |h|<=2^(ex+1/2) */
+    /* z1 <- sqrt(z1): if z1 = z + h, then sqrt(z1) = sqrt(z) + h/2/sqrt(t) */
+    ey = mpfr_get_exp (MPC_RE(z1)) >= mpfr_get_exp (MPC_IM(z1))
+      ? mpfr_get_exp (MPC_RE(z1)) : mpfr_get_exp (MPC_IM(z1));
+    /* we have |z1| >= 2^(ey-1) thus 1/|z1| <= 2^(1-ey) */
+    mpc_sqrt (z1, z1, MPC_RNDNN);
+    ex = (2 * ex + 1) - 2 - (ey - 1); /* |h^2/4/|t| <= 2^ex */
+    ex = (ex + 1) / 2; /* ceil(ex/2) */
+    /* express ex in terms of ulp(z1) */
+    ey = mpfr_get_exp (MPC_RE(z1)) <= mpfr_get_exp (MPC_IM(z1))
+      ? mpfr_get_exp (MPC_RE(z1)) : mpfr_get_exp (MPC_IM(z1));
+    ex = ex - ey + p;
+    /* take into account the rounding error in the mpc_sqrt call */
+    err = (ex <= 0) ? 1 : ex + 1;
+    /* err(x) <= 2^err * ulp(x), err(y) <= 2^err * ulp(y) */
+    /* z1 <- i*z + z1 */
+    ex = mpfr_get_exp (MPC_RE(z1));
+    ey = mpfr_get_exp (MPC_IM(z1));
+    mpfr_sub (MPC_RE(z1), MPC_RE(z1), MPC_IM(op), GMP_RNDN);
+    mpfr_add (MPC_IM(z1), MPC_IM(z1), MPC_RE(op), GMP_RNDN);
+    if (mpfr_cmp_ui (MPC_RE(z1), 0) == 0 || mpfr_cmp_ui (MPC_IM(z1), 0) == 0)
+      continue;
+    ex -= mpfr_get_exp (MPC_RE(z1)); /* cancellation in x */
+    ey -= mpfr_get_exp (MPC_IM(z1)); /* cancellation in y */
+    ex = (ex >= ey) ? ex : ey; /* maximum cancellation */
+    err += ex;
+    err = (err <= 0) ? 1 : err + 1; /* rounding error in sub/add */
+    /* z1 <- log(z1): if z1 = z + h, then log(z1) = log(z) + h/t with
+       |t| >= min(|z1|,|z|) */
+    ex = mpfr_get_exp (MPC_RE(z1));
+    ey = mpfr_get_exp (MPC_IM(z1));
+    ex = (ex >= ey) ? ex : ey;
+    err += ex - p; /* revert to absolute error <= 2^err */
+    mpc_log (z1, z1, GMP_RNDN);
+    err -= ex - 1; /* 1/|t| <= 1/|z| <= 2^(1-ex) */
+    /* express err in terms of ulp(z1) */
+    ey = mpfr_get_exp (MPC_RE(z1)) <= mpfr_get_exp (MPC_IM(z1))
+      ? mpfr_get_exp (MPC_RE(z1)) : mpfr_get_exp (MPC_IM(z1));
+    err = err - ey + p;
+    /* take into account the rounding error in the mpc_log call */
+    err = (err <= 0) ? 1 : err + 1;
+    /* z1 <- -i*z1 */
+    mpfr_swap (MPC_RE(z1), MPC_IM(z1));
+    mpfr_neg (MPC_IM(z1), MPC_IM(z1), GMP_RNDN);
+    if (mpfr_can_round (MPC_RE(z1), p - err, GMP_RNDN, GMP_RNDZ,
+                        p_re + (rnd_re == GMP_RNDN)) &&
+        mpfr_can_round (MPC_IM(z1), p - err, GMP_RNDN, GMP_RNDZ,
+                        p_im + (rnd_im == GMP_RNDN)))
+      break;
+  }
+
+  inex = mpc_set (rop, z1, rnd);
+  mpc_clear (z1);
+
+  return inex;
 }
