@@ -34,8 +34,8 @@ mpc_acosh (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
 
   if (mpfr_zero_p (MPC_RE (op)) && mpfr_nan_p (MPC_IM (op)))
     {
-      mpfr_set_nan (MPC_RE (op));
-      mpfr_set_nan (MPC_IM (op));
+      mpfr_set_nan (MPC_RE (rop));
+      mpfr_set_nan (MPC_IM (rop));
       return 0;
     }
   
