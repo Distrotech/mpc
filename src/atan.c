@@ -1,6 +1,6 @@
 /* mpc_atan -- arctangent of a complex number.
 
-Copyright (C) 2009 Philippe Th\'eveny
+Copyright (C) 2009 Philippe Th\'eveny, Paul Zimmermann
 
 This file is part of the MPC Library.
 
@@ -142,7 +142,7 @@ mpc_atan (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
         {
           /* atan(+0+iy) = +pi/2 +i*atanh(1/y), if |y| > 1
              atan(-0+iy) = -pi/2 +i*atanh(1/y), if |y| > 1 */
-          mp_rnd_t rnd_im;
+          mp_rnd_t rnd_im, rnd_away;
           mpfr_t y;
           mp_prec_t p, p_im;
           int ok;
@@ -172,8 +172,9 @@ mpc_atan (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
               /* atanh cannot underflow: |atanh(x)| > |x| for |x| < 1 */
               inex_im |= mpfr_atanh (y, y, GMP_RNDZ);
 
+              rnd_away = mpfr_sgn (y) > 0 ? GMP_RNDU : GMP_RNDD;
               ok = inex_im == 0
-                || mpfr_can_round (y, p-2, GMP_RNDZ, rnd_im,
+                || mpfr_can_round (y, p - 2, GMP_RNDZ, rnd_away,
                                    p_im + (rnd_im == GMP_RNDN));
             } while (ok == 0);
 
@@ -209,13 +210,15 @@ mpc_atan (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
        b = o(atan2(x,a))  error(b) < [1+2^{3+Exp(x)-Exp(a)-Exp(b)}] ulp(b)
                                      = kb ulp(b)
        c = o(1+y)         error(c) < 1 ulp(c)
-       d = o(atan2(-x,a)) error(d) < [1+2^{3+Exp(x)-Exp(c)-Exp(d)}] ulp(d)
+       d = o(atan2(-x,c)) error(d) < [1+2^{3+Exp(x)-Exp(c)-Exp(d)}] ulp(d)
                                      = kd ulp(d)
        e = o(b - d)       error(e) < [1 + kb*2^{Exp(b}-Exp(e)}
                                         + kd*2^{Exp(d)-Exp(e)}] ulp(e)
                           error(e) < [1 + 2^{4+Exp(x)-Exp(a)-Exp(e)}
                                         + 2^{4+Exp(x)-Exp(c)-Exp(e)}] ulp(e)
                           because |atan(u)| < |u|
+                                   < [1 + 2^{5+Exp(x)-min(Exp(a),Exp(c))
+                                             -Exp(e)}] ulp(e)
        f = e/2            exact
     */
 
@@ -223,12 +226,8 @@ mpc_atan (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
     /* p: working precision */
     p = (op_im_exp > 0 || prec > SAFE_ABS (mp_prec_t, op_im_exp)) ? prec
       : (prec - op_im_exp);
-    rnd1 =
-      mpfr_sgn (MPC_RE (op)) * mpfr_cmp_ui (MPC_IM (op), 1) > 0 ? GMP_RNDZ
-      : mpfr_cmp_ui (MPC_IM (op), 1) > 0 ? GMP_RNDD : GMP_RNDU;
-    rnd2 =
-      mpfr_sgn (MPC_RE (op)) * mpfr_cmp_si (MPC_IM (op), -1) < 0 ? GMP_RNDZ
-      : mpfr_cmp_si (MPC_IM (op), -1) > 0 ? GMP_RNDU : GMP_RNDD;
+    rnd1 = mpfr_sgn (MPC_RE (op)) > 0 ? GMP_RNDD : GMP_RNDU;
+    rnd2 = mpfr_sgn (MPC_RE (op)) < 0 ? GMP_RNDU : GMP_RNDD;
 
     do
       {
@@ -237,29 +236,31 @@ mpc_atan (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
         mpfr_set_prec (b, p);
         mpfr_set_prec (x, p);
 
-        /* x = upper bound for atan (x/1-y) */
+        /* x = upper bound for atan (x/(1-y)). Since atan is increasing, we
+           need an upper bound on x/(1-y), i.e., a lower bound on 1-y for
+           x positive, and an upper bound on 1-y for x negative */
         mpfr_ui_sub (a, 1, MPC_IM (op), rnd1);
+        err = MPFR_EXP (a); /* err = Exp(a) with the notations above */
         mpfr_atan2 (x, MPC_RE (op), a, GMP_RNDU);
-        err = MPFR_EXP (a);
 
-        /* b = lower bound for atan (-x/1+y) */
+        /* b = lower bound for atan (-x/(1+y)): for x negative, we need a
+           lower bound on -x/(1+y), i.e., an upper bound on 1+y */
         mpfr_add_ui (a, MPC_IM(op), 1, rnd2);
+        expo = MPFR_EXP (a); /* expo = Exp(d) with the notations above */
         mpfr_atan2 (b, minus_op_re, a, GMP_RNDD);
-        expo = MPFR_EXP (a);
 
         mpfr_sub (x, x, b, GMP_RNDU);
 
-        if (err < expo)
-          err = 4 + op_re_exp - err - MPFR_EXP (x); /* FIXME: may overflow */
-        else if (err == expo)
-          err = 5 + op_re_exp - err - MPFR_EXP (x); /* FIXME: may overflow */
-        else
-          err = 4 + op_re_exp - expo - MPFR_EXP (x); /* FIXME: may overflow */
-        err = err > 0 ? (err + 1) : 1;
+        err = err < expo ? err : expo; /* err = min(Exp(a),Exp(c)) */
+        err = 5 + op_re_exp - err - MPFR_EXP (x);
+        /* error is bounded by [1 + 2^err] ulp(e) */
+        err = err < 0 ? 1 : err + 1;
 
         mpfr_div_2ui (x, x, 1, GMP_RNDU);
 
-        ok = mpfr_can_round (x, p - err, GMP_RNDU, GMP_RNDZ,
+        /* Note: using RND2=RNDD guarantees that if x is exactly representable
+           on prec + ... bits, mpfr_can_round will return 0 */
+        ok = mpfr_can_round (x, p - err, GMP_RNDU, GMP_RNDD,
                              prec + (MPC_RND_RE (rnd) == GMP_RNDN));
       } while (ok == 0);
 
@@ -275,11 +276,13 @@ mpc_atan (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
        e = o(log(d)) error(e) < [1 + 7*2^{2-Exp(e)}] ulp(e) = ke ulp(e)
        f = o(1-y)    error(f) < 1 ulp(f)
        g = o(f^2)    error(g) < 5 ulp(g)
-       h = o(g-e)    error(h) < 7 ulp(h)
+       h = o(c+f)    error(h) < 7 ulp(h)
        i = o(log(h)) error(i) < [1 + 7*2^{2-Exp(i)}] ulp(i) = ki ulp(i)
        j = o(e-i)    error(j) < [1 + ke*2^{Exp(e)-Exp(j)}
                                    + ki*2^{Exp(i)-Exp(j)}] ulp(j)
                      error(j) < [1 + 2^{Exp(e)-Exp(j)} + 2^{Exp(i)-Exp(j)}
+                                   + 7*2^{3-Exp(j)}] ulp(j)
+                              < [1 + 2^{max(Exp(e),Exp(i))-Exp(j)+1}
                                    + 7*2^{3-Exp(j)}] ulp(j)
        k = j/4       exact
     */
@@ -304,28 +307,29 @@ mpc_atan (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
         /* b = lower bound for log(x^2 + (1-y)^2) */
         mpfr_ui_sub (b, 1, MPC_IM (op), GMP_RNDZ);
         mpfr_sqr (b, b, GMP_RNDU);
-        mpfr_sqr (y, MPC_RE (op), GMP_RNDZ);
+        /* mpfr_sqr (y, MPC_RE (op), GMP_RNDZ); */
+        mpfr_nextbelow (y);
         mpfr_add (b, b, y, GMP_RNDZ);
         mpfr_log (b, b, GMP_RNDZ);
 
         mpfr_sub (y, a, b, GMP_RNDU);
 
         expo = MPFR_EXP (a) < MPFR_EXP (b) ? MPFR_EXP (b) : MPFR_EXP (a);
-        if (expo < 6)
-          expo = 6;
-        if (MPFR_EXP (y) < expo)
-          err = 4 + expo - MPFR_EXP (y); /* FIXME: possible overflow */
+        expo = expo - MPFR_EXP (y) + 1;
+        err = 3 - MPFR_EXP (y);
+        /* error(j) <= [1 + 2^expo + 7*2^err] ulp(j) */
+        if (expo <= err) /* error(j) <= [1 + 2^{err+1}] ulp(j) */
+          err = (err < 0) ? 1 : err + 2;
         else
-          err = 2;
+          err = (expo < 0) ? 1 : expo + 2;
 
         mpfr_div_2ui (y, y, 2, GMP_RNDN);
         if (mpfr_zero_p (y))
           err = 2; /* underflow */
 
-        ok = mpfr_can_round (y, p - err, GMP_RNDU, GMP_RNDZ,
+        ok = mpfr_can_round (y, p - err, GMP_RNDU, GMP_RNDD,
                              prec + (MPC_RND_IM (rnd) == GMP_RNDN));
       } while (ok == 0);
-
 
     inex = mpc_set_fr_fr (rop, x, y, rnd);
 
