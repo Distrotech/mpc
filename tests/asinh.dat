@@ -1,6 +1,6 @@
 # Data file for mpc_asinh.
 #
-# Copyright (C) 2009 Philippe Th\'eveny
+# Copyright (C) 2009 Philippe Th\'eveny, Paul Zimmermann
 #
 # This file is part of the MPC Library.
 #
@@ -116,5 +116,7 @@
 - - 53 -0x1ECC2CAEC5160Ap-53 53  0x1921FB54442D18p-52    53   -0 53 +1.5 N N
 + - 53  0x1ECC2CAEC5160Ap-53 53  0x1921FB54442D18p-52    53   +0 53 +1.5 N N
 
-# IEEE-754 double precision
+# regular arguments
++ + 53 0x1E20C7792ECE6Bp-52 53 0x3526776219EEBp-52 53 0x3243F6A8885A3p-48 53 0x162E42FEFA39EFp-53 N N
+
 

@@ -1,6 +1,6 @@
 # Data file for mpc_atanh.
 #
-# Copyright (C) 2009 Philippe Th\'eveny
+# Copyright (C) 2009 Philippe Th\'eveny, Paul Zimmermann
 #
 # This file is part of the MPC Library.
 #
@@ -109,4 +109,4 @@
 0 - 53   +0 53 +0x1F5B75F92C80DDp-55    53   +0 53 +.25 N N
 
 # IEEE-754 double precision
-
+- + 53 0x13F3F785301CE9p-54 53 0xBFA43C2A868B3p-51 53 0x3243F6A8885A3p-48 53 0x162E42FEFA39EFp-53 N N

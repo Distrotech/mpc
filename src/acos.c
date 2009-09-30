@@ -1,6 +1,6 @@
 /* mpc_acos -- arccosine of a complex number.
 
-Copyright (C) 2009 Philippe Th\'eveny
+Copyright (C) 2009 Philippe Th\'eveny, Paul Zimmermann
 
 This file is part of the MPC Library.
 
@@ -19,6 +19,7 @@ along with the MPC Library; see the file COPYING.LIB.  If not, write to
 the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA. */
 
+#include <stdio.h>    /* for MPC_ASSERT */
 #include "mpc-impl.h"
 
 extern int set_pi_over_2 (mpfr_ptr rop, int s, mpfr_rnd_t rnd);
@@ -26,8 +27,13 @@ extern int set_pi_over_2 (mpfr_ptr rop, int s, mpfr_rnd_t rnd);
 int
 mpc_acos (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
 {
-  int inex_re;
-  int inex_im;
+  int inex_re, inex_im, inex;
+  mp_prec_t p_re, p_im, p;
+  mpc_t z1;
+  mpfr_t pi_over_2;
+  mp_exp_t e1, e2;
+  mp_rnd_t rnd_im;
+  mpc_rnd_t rnd1;
 
   inex_re = 0;
   inex_im = 0;
@@ -167,9 +173,60 @@ mpc_acos (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
       return MPC_INEX (inex_re, inex_im);      
     }
 
-  /* regular complex argument */
-  /* TODO */
-  mpfr_set_nan (MPC_RE (rop));
-  mpfr_set_nan (MPC_RE (rop));
-  return 0;
+  /* regular complex argument: acos(z) = Pi/2 - asin(z) */
+  p_re = mpfr_get_prec (MPC_RE(rop));
+  p_im = mpfr_get_prec (MPC_IM(rop));
+  p = p_re;
+  mpc_init3 (z1, p, p_im); /* we round directly the imaginary part to p_im,
+                              with rounding mode opposite to rnd_im */
+  rnd_im = MPC_RND_IM(rnd);
+  /* the imaginary part of asin(z) has the same sign as Im(z), thus if
+     Im(z) > 0 and rnd_im = RNDZ, we want to round the Im(asin(z)) to -Inf
+     so that -Im(asin(z)) is rounded to zero */
+  if (rnd_im == GMP_RNDZ)
+    rnd_im = mpfr_sgn (MPC_IM(op)) > 0 ? GMP_RNDD : GMP_RNDU;
+  else
+    rnd_im = rnd_im == GMP_RNDU ? GMP_RNDD
+      : rnd_im == GMP_RNDD ? GMP_RNDU
+#if MPFR_VERSION_MAJOR >= 3
+      : rnd_im == GMP_RNDA ? GMP_RNDZ
+#endif
+      : rnd_im;
+  rnd1 = RNDC(GMP_RNDN, rnd_im);
+  mpfr_init2 (pi_over_2, p);
+  for (;;)
+    {
+      p += mpc_ceil_log2 (p) + 3;
+      
+      mpfr_set_prec (MPC_RE(z1), p);
+      mpfr_set_prec (pi_over_2, p);
+
+      mpfr_const_pi (pi_over_2, GMP_RNDN);
+      mpfr_div_2exp (pi_over_2, pi_over_2, 1, GMP_RNDN); /* Pi/2 */
+      e1 = 1; /* Exp(pi_over_2) */
+      inex = mpc_asin (z1, op, rnd1); /* asin(z) */
+      MPC_ASSERT (mpfr_sgn (MPC_IM(z1)) * mpfr_sgn (MPC_IM(op)) > 0);
+      inex_im = MPC_INEX_IM(inex); /* inex_im is in {-1, 0, 1} */
+      e2 = mpfr_get_exp (MPC_RE(z1));
+      mpfr_sub (MPC_RE(z1), pi_over_2, MPC_RE(z1), GMP_RNDN);
+      /* the error on x=Re(z1) is bounded by 1/2 ulp(x) + 2^(e1-p-1) +
+         2^(e2-p-1) */
+      e1 = e1 >= e2 ? e1 + 1 : e2 + 1;
+      /* the error on x is bounded by 1/2 ulp(x) + 2^(e1-p-1) */
+      e1 -= mpfr_get_exp (MPC_RE(z1));
+      /* the error on x is bounded by 1/2 ulp(x) [1 + 2^e1] */
+      e1 = e1 <= 0 ? 0 : e1;
+      /* the error on x is bounded by 2^e1 * ulp(x) */
+      mpfr_neg (MPC_IM(z1), MPC_IM(z1), GMP_RNDN); /* exact */
+      inex_im = -inex_im;
+      if (mpfr_can_round (MPC_RE(z1), p - e1, GMP_RNDN, GMP_RNDZ,
+                          p_re + (MPC_RND_RE(rnd) == GMP_RNDN)))
+        break;
+    }
+  inex = mpc_set (rop, z1, rnd);
+  inex_re = MPC_INEX_RE(inex);
+  mpc_clear (z1);
+  mpfr_clear (pi_over_2);
+
+  return MPC_INEX(inex_re, inex_im);
 }
