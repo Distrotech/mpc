@@ -1,4 +1,4 @@
-/* read_data,c -- Read data file and check function.
+/* read_data.c -- Read data file and check function.
 
 Copyright (C) 2008, 2009, 2010, 2011 INRIA
 
@@ -189,7 +189,7 @@ read_string (FILE *fp, char **buffer_ptr, size_t buffer_length, const char *name
   nextchar = getc (fp);
   skip_whitespace_comments (fp);
 
-  buffer_ptr = &buffer;
+  *buffer_ptr = buffer;
 
   return buffer_length;
 

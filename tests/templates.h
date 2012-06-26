@@ -21,6 +21,8 @@ along with this program. If not, see http://www.gnu.org/licenses/ .
 #ifndef __TEMPLATES_H
 #define __TEMPLATES_H
 
+#include "mpc-tests.h"
+
 /* 
     function descriptions 
 */
@@ -67,8 +69,10 @@ typedef union {
   mpq_t                mpq;
   mpfr_t               mpfr;
   mpfr_rnd_t           mpfr_rnd;
+  int                  mpfr_inex;
   mpc_t                mpc;
   mpc_rnd_t            mpc_rnd;
+  int                  mpc_inex;
 } mpc_operand_t;
 
 /* function parameters */
@@ -83,5 +87,21 @@ typedef struct {
 
 void read_description(mpc_fun_param_t* param, const char *file);
 
+typedef struct {
+  char *pathname;
+  FILE *fd;
+  unsigned long line_number;
+  unsigned long test_line_number;
+  int nextchar;
+} mpc_datafile_context_t;
+
+void open_datafile (mpc_datafile_context_t* datafile_context,
+                    const char * data_filename);
+void    init_parameters     (mpc_fun_param_t *params);
+void    clear_parameters    (mpc_fun_param_t *params);
+void    read_line           (mpc_datafile_context_t* datafile_context,
+                             mpc_fun_param_t* params);
+void    check_data          (mpc_datafile_context_t* datafile_context,
+                             mpc_fun_param_t* params);
 
 #endif /*__TEMPLATES_H*/
