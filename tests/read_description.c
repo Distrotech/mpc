@@ -22,52 +22,12 @@ along with this program. If not, see http://www.gnu.org/licenses/ .
 #include "mpc-tests.h"
 #include "templates.h"
 
-static size_t read_keyworddesc (FILE *fp, char **buffer_ptr, size_t buffer_length, 
-                                const char *name);
+static size_t read_keyworddesc (mpc_datafile_context_t* datafile_context, char **buffer_ptr,
+                                size_t buffer_length, const char *name);
 static mpc_param_t description_findtype (const char *name);
 
-static int nextchar;
-static int line_number;
 
 /* read primitives */
-static void
-skip_line (FILE *fp)
-   /* skips characters until reaching '\n' or EOF; */
-   /* '\n' is skipped as well                      */
-{
-   while (nextchar != EOF && nextchar != '\n')
-     nextchar = getc (fp);
-   if (nextchar != EOF)
-     {
-       line_number ++;
-       nextchar = getc (fp);
-     }
-}
-
-static void
-skip_whitespace (FILE *fp)
-   /* skips over whitespace if any until reaching EOF */
-   /* or non-whitespace                               */
-{
-   while (isspace (nextchar))
-     {
-       if (nextchar == '\n')
-         line_number ++;
-       nextchar = getc (fp);
-     }
-}
-
-static void
-skip_whitespace_comments2 (FILE *fp)
-   /* skips over all whitespace and comments, if any */
-{
-   skip_whitespace (fp);
-   while (nextchar == '#') {
-      skip_line (fp);
-      if (nextchar != EOF)
-         skip_whitespace (fp);
-   }
-}
 
 /* return the enum associated to name */
 mpc_param_t 
@@ -126,7 +86,7 @@ description_findtype (const char *name)
 void 
 read_description (mpc_fun_param_t* param, const char *filename)
 {
-    FILE *fp;
+    mpc_datafile_context_t datafile_context;
     const char *pathname = filename;
     char *namestr = NULL;
     char *buffer = NULL;
@@ -135,20 +95,19 @@ read_description (mpc_fun_param_t* param, const char *filename)
     int nbin = 0;
     int j;
     
-    fp = open_data_file (filename);
-    nextchar= ' ';
+   open_datafile (&datafile_context, filename);
     
     /* read NAME fields */
-    skip_whitespace_comments2(fp);
-    len = read_keyworddesc (fp, &namestr, len, filename);
+    tpl_skip_whitespace_comments(&datafile_context);
+    len = read_keyworddesc (&datafile_context, &namestr, len, filename);
     if (namestr==NULL || strcmp(namestr,"NAME:")!=0) {
         printf ("Error: Unable to read 'NAME:' in file '%s'\n",
           filename);
         exit (1);
     }
     
-    skip_whitespace_comments2(fp);
-    read_keyworddesc (fp, &namestr, len, filename);
+    tpl_skip_whitespace_comments(&datafile_context);
+    read_keyworddesc (&datafile_context, &namestr, len, filename);
     if (namestr==NULL) {
         printf ("Error: Unable to read the name of the function in file '%s'\n",
                 filename);
@@ -158,17 +117,17 @@ read_description (mpc_fun_param_t* param, const char *filename)
     namestr = NULL;
     
     /* read RETURN fields */
-    skip_whitespace_comments2(fp);
+    tpl_skip_whitespace_comments(&datafile_context);
     len = 0;
-    len = read_keyworddesc (fp, &buffer, len, filename);
+    len = read_keyworddesc (&datafile_context, &buffer, len, filename);
     if (buffer==NULL || strcmp(buffer,"RETURN:")!=0) {
         printf ("Error: Unable to read 'NAME:' in file '%s'\n",
           pathname);
         exit (1);
     }
     
-    skip_whitespace_comments2(fp);
-    len = read_keyworddesc (fp, &buffer, len, filename);
+    tpl_skip_whitespace_comments(&datafile_context);
+    len = read_keyworddesc (&datafile_context, &buffer, len, filename);
     if (buffer==NULL) {
         printf ("Error: Unable to read the return type of the function in file '%s'\n",
                 pathname);
@@ -177,17 +136,17 @@ read_description (mpc_fun_param_t* param, const char *filename)
     param->T[nbout++] = description_findtype (buffer); 
     
     /* read OUPUT fields */
-    skip_whitespace_comments2(fp);
-    len = read_keyworddesc (fp, &buffer, len, filename);
+    tpl_skip_whitespace_comments(&datafile_context);
+    len = read_keyworddesc (&datafile_context, &buffer, len, filename);
     if (buffer==NULL || strcmp(buffer,"OUTPUT:")!=0) {
         printf ("Error: Unable to read 'OUTPUT:' in file '%s'\n",
           pathname);
         exit (1);
     }
 
-    while (!feof(fp)) {
-        skip_whitespace_comments2(fp);
-        len = read_keyworddesc (fp, &buffer, len, filename);
+    while (!feof(datafile_context.fd)) {
+       tpl_skip_whitespace_comments(&datafile_context);
+        len = read_keyworddesc (&datafile_context, &buffer, len, filename);
         if (buffer==NULL) {
             printf ("Error: Unable to read the output type of the function in file '%s'\n",
                 pathname);
@@ -200,15 +159,15 @@ read_description (mpc_fun_param_t* param, const char *filename)
     }
     
     /* read INPUT fields */
-    while (!feof(fp)) {
-        skip_whitespace_comments2(fp);
-        len = read_keyworddesc (fp, &buffer, len, filename);
+    while (!feof(datafile_context.fd)) {
+        tpl_skip_whitespace_comments(&datafile_context);
+        len = read_keyworddesc (&datafile_context, &buffer, len, filename);
         if (buffer==NULL) {
             printf ("Error: Unable to read the input type of the function in file '%s'\n",
                 pathname);
             exit (1);
         }
-        if (strlen(buffer)==0 && feof(fp)) {
+        if (strlen(buffer)==0 && feof(datafile_context.fd)) {
             break;
         }
         param->T[nbout+nbin] = description_findtype (buffer); 
@@ -226,7 +185,8 @@ read_description (mpc_fun_param_t* param, const char *filename)
 }
 
 static size_t
-read_keyworddesc (FILE *fp, char **buffer_ptr, size_t buffer_length, const char *name)
+read_keyworddesc (mpc_datafile_context_t* datafile_context, char **buffer_ptr, size_t buffer_length, 
+                  const char *name)
 {
   size_t pos;
   char *buffer;
@@ -234,7 +194,7 @@ read_keyworddesc (FILE *fp, char **buffer_ptr, size_t buffer_length, const char 
   pos = 0;
   buffer = *buffer_ptr;
 
-  while (nextchar != EOF && nextchar !='#' && nextchar !='\n')
+  while (datafile_context->nextchar != EOF && datafile_context->nextchar !='#' && datafile_context->nextchar !='\n')
     {
       if (pos + 1 > buffer_length)
         {
@@ -247,8 +207,8 @@ read_keyworddesc (FILE *fp, char **buffer_ptr, size_t buffer_length, const char 
             }
           buffer_length *= 2;
         }
-      buffer[pos++] = (char) nextchar;
-      nextchar = getc (fp);
+      buffer[pos++] = (char) datafile_context->nextchar;
+      datafile_context->nextchar = getc (datafile_context->fd);
     }
   while (pos>0 && isspace(buffer[pos-1])) pos--;
   

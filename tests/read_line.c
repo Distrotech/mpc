@@ -20,6 +20,10 @@ along with this program. If not, see http://www.gnu.org/licenses/ .
 
 #include "templates.h"
 
+static void
+tpl_read_si (mpc_datafile_context_t* datafile_context, long int *si);
+static void
+tpl_read_ui (mpc_datafile_context_t* datafile_context, unsigned long int *ui);
 
 
 static void
@@ -28,9 +32,8 @@ read_param  (mpc_datafile_context_t* datafile_context,
 {
   switch (t)
     {
-#if 0
     case NATIVE_INT: 
-      tpl_read_int (datafile_context, &(p->ui));
+      tpl_read_int (datafile_context, &(p->i),"");
       break;
     case NATIVE_UL:
       tpl_read_ui (datafile_context, &(p->ui));
@@ -38,19 +41,17 @@ read_param  (mpc_datafile_context_t* datafile_context,
     case NATIVE_L:
       tpl_read_si (datafile_context, &(p->si));
       break;
-    case NATIVE_D:
-      tpl_read_d (datafile_context, &(p->d));
-      break;
-
       /* TODO */
+    /*case NATIVE_D:
+      tpl_read_d (datafile_context, &(p->d));
+      break;*/
+
       /*         case GMP_Z: */
       /*           break; */
       /*         case GMP_Q: */
       /*           break; */
       /*         case GMP_F: */
       /*           break; */
-
-#endif
 
     case MPFR_INEX:
       tpl_read_mpfr_inex (datafile_context, &(p->mpfr_inex));
@@ -161,6 +162,54 @@ tpl_read_int (mpc_datafile_context_t* datafile_context, int *nread, const char *
     {
       printf ("Error: Cannot read %s in file '%s' line %lu\n",
               name, datafile_context->pathname, datafile_context->line_number);
+      exit (1);
+    }
+  datafile_context->nextchar = getc (datafile_context->fd);
+  tpl_skip_whitespace_comments (datafile_context);
+}
+
+static void
+tpl_read_ui (mpc_datafile_context_t* datafile_context, unsigned long int *ui)
+{
+  int n = 0;
+
+  if (datafile_context->nextchar == EOF)
+    {
+      printf ("Error: Unexpected EOF when reading uint "
+              "in file '%s' line %lu\n",
+              datafile_context->pathname, datafile_context->line_number);
+      exit (1);
+    }
+  ungetc (datafile_context->nextchar, datafile_context->fd);
+  n = fscanf (datafile_context->fd, "%lu", ui);
+  if (ferror (datafile_context->fd) || n == 0 || n == EOF)
+    {
+      printf ("Error: Cannot read uint in file '%s' line %lu\n",
+              datafile_context->pathname, datafile_context->line_number);
+      exit (1);
+    }
+  datafile_context->nextchar = getc (datafile_context->fd);
+  tpl_skip_whitespace_comments (datafile_context);
+}
+
+static void
+tpl_read_si (mpc_datafile_context_t* datafile_context, long int *si)
+{
+  int n = 0;
+
+  if (datafile_context->nextchar == EOF)
+    {
+      printf ("Error: Unexpected EOF when reading sint "
+              "in file '%s' line %lu\n",
+              datafile_context->pathname, datafile_context->line_number);
+      exit (1);
+    }
+  ungetc (datafile_context->nextchar, datafile_context->fd);
+  n = fscanf (datafile_context->fd, "%li", si);
+  if (ferror (datafile_context->fd) || n == 0 || n == EOF)
+    {
+      printf ("Error: Cannot read sint in file '%s' line %lu\n",
+              datafile_context->pathname, datafile_context->line_number);
       exit (1);
     }
   datafile_context->nextchar = getc (datafile_context->fd);
