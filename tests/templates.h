@@ -89,6 +89,7 @@ typedef struct {
 
 
 void read_description(mpc_fun_param_t* param, const char *file);
+const char*  read_description_findname (mpc_param_t e);
 
 typedef struct {
   char *pathname;

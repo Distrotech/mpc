@@ -26,6 +26,40 @@ static size_t read_keyworddesc (mpc_datafile_context_t* datafile_context, char *
                                 size_t buffer_length, const char *name);
 static mpc_param_t description_findtype (const char *name);
 
+/* tuple to link name with the enum value */
+typedef struct  {
+    const char *typename;  /* type name */
+    mpc_param_t  typeval ;  /* type enum */
+} param_typeval_t;
+
+/* available types for function description */
+static const param_typeval_t sparam_typeval[]= {
+   { "int"                 , NATIVE_INT  },
+   { "unsigned long int"   , NATIVE_UL   },
+   { "unsigned long"       , NATIVE_UL   },
+   { "long int"            , NATIVE_L    },
+   { "long"                , NATIVE_L    },
+   { "double"              , NATIVE_D    },
+   { "long double"         , NATIVE_LD   },
+   { "double _Complex"     , NATIVE_DC   },
+   { "long double _Complex", NATIVE_LDC  },
+   { "intmax_t"            , NATIVE_IM   },
+   { "uintmax_t"           , NATIVE_UIM  },
+   { "mpz_ptr"             , GMP_Z       },
+   { "mpz_srcptr"          , GMP_Z       },
+   { "mpq_ptr"             , GMP_Q       },
+   { "mpq_srcptr"          , GMP_Q       },
+   { "mpf_ptr"             , GMP_F       },
+   { "mpf_srcptr"          , GMP_F       },
+   { "mpfr_inex"           , MPFR_INEX   },
+   { "mpfr_ptr"            , MPFR        }, 
+   { "mpfr_srcptr"         , MPFR        }, 
+   { "mpfr_rnd_t"          , MPFR_RND    },
+   { "mpc_inex"            , MPC_INEX    },
+   { "mpc_ptr"             , MPC         }, 
+   { "mpc_srcptr"          , MPC         }, 
+   { "mpc_rnd_t"           , MPC_RND     } 
+};
 
 /* read primitives */
 
@@ -33,38 +67,6 @@ static mpc_param_t description_findtype (const char *name);
 mpc_param_t 
 description_findtype (const char *name)
 {
-    /* tuple to link name with the enum value */
-    typedef struct  {
-        const char *typename;  /* type name */
-        mpc_param_t  typeval ;  /* type enum */
-    } param_typeval_t;
-
-    /* available types for function description */
-    const param_typeval_t sparam_typeval[]= {
-       { "int"                 , NATIVE_INT  },
-       { "unsigned long int"   , NATIVE_UL   },
-       { "long int"            , NATIVE_L    },
-       { "double"              , NATIVE_D    },
-       { "long double"         , NATIVE_LD   },
-       { "double _Complex"     , NATIVE_DC   },
-       { "long double _Complex", NATIVE_LDC  },
-       { "intmax_t"            , NATIVE_IM   },
-       { "uintmax_t"           , NATIVE_UIM  },
-       { "mpz_ptr"             , GMP_Z       },
-       { "mpz_srcptr"          , GMP_Z       },
-       { "mpq_ptr"             , GMP_Q       },
-       { "mpq_srcptr"          , GMP_Q       },
-       { "mpf_ptr"             , GMP_F       },
-       { "mpf_srcptr"          , GMP_F       },
-       { "mpfr_inex"           , MPFR_INEX   },
-       { "mpfr_ptr"            , MPFR        }, 
-       { "mpfr_srcptr"         , MPFR        }, 
-       { "mpfr_rnd_t"          , MPFR_RND    },
-       { "mpc_inex"            , MPC_INEX    },
-       { "mpc_ptr"             , MPC         }, 
-       { "mpc_srcptr"          , MPC         }, 
-       { "mpc_rnd_t"           , MPC_RND     } 
-    };
     
     mpc_param_t r = sparam_typeval[0].typeval;
     size_t s = 0;
@@ -81,6 +83,28 @@ description_findtype (const char *name)
     }
     return r;
 }
+
+/* return the name  associated to the enum */
+const char* 
+read_description_findname (mpc_param_t e)
+{
+    
+    const char * name = NULL;
+    size_t s = 0;
+    const size_t send = sizeof(sparam_typeval)/sizeof(param_typeval_t);
+    
+    while (s<send && sparam_typeval[s].typeval!=e) s++;    
+
+    if (s<send) {
+        name = sparam_typeval[s].typename;
+    }
+    else {
+        printf ("Error: Unable to find the enum type\n");
+        exit (1);
+    }
+    return name;
+}
+
 
 /* read the description file and fill param */
 void 
