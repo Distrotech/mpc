@@ -54,6 +54,5 @@ open_datafile (mpc_datafile_context_t* datafile_context,
 
   datafile_context->line_number = 1;
   datafile_context->nextchar = getc (datafile_context->fd);
-  /* TODO */
-/*   skip_whitespacecomments (datafile_context); */
+  tpl_skip_whitespace_comments (datafile_context);
 }

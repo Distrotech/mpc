@@ -20,23 +20,26 @@ along with this program. If not, see http://www.gnu.org/licenses/ .
 
 #include "templates.h"
 
+
+
 static void
 read_param  (mpc_datafile_context_t* datafile_context,
              mpc_operand_t* p, mpc_param_t t)
 {
-#if 0
   switch (t)
     {
-      /*         case NATIVE_INT: */
-      /*           break; */
+#if 0
+    case NATIVE_INT: 
+      tpl_read_int (datafile_context, &(p->ui));
+      break;
     case NATIVE_UL:
-      read_ui (datafile_context, &(p->ui));
+      tpl_read_ui (datafile_context, &(p->ui));
       break;
     case NATIVE_L:
-      read_si (datafile_context, &(p->si));
+      tpl_read_si (datafile_context, &(p->si));
       break;
     case NATIVE_D:
-      read_d (datafile_context, &(p->d));
+      tpl_read_d (datafile_context, &(p->d));
       break;
 
       /* TODO */
@@ -47,25 +50,34 @@ read_param  (mpc_datafile_context_t* datafile_context,
       /*         case GMP_F: */
       /*           break; */
 
+#endif
+
     case MPFR_INEX:
-      read_mpfr_inex (datafile_context, &(p->mpfr_inex));
+      tpl_read_mpfr_inex (datafile_context, &(p->mpfr_inex));
       break;
+      
     case MPFR:
-      read_mpfr (datafile_context, &(p->mpfr));
+      tpl_read_mpfr (datafile_context, p->mpfr, &(p->known_signs.re));
+      break;
+
+    case MPFR_RND:
+      tpl_read_mpfr_rnd (datafile_context, &p->mpfr_rnd);
       break;
 
     case MPC_INEX:
-      read_mpc_inex (datafile_context, &(p->mpc_inex));
+      tpl_read_mpc_inex (datafile_context, p->mpc_inex_check);
       break;
     case MPC:
-      read_mpc (datafile_context, &(p->mpc));
+      tpl_read_mpc (datafile_context, p->mpc, &(p->known_signs));
+      break;
+    case MPC_RND:
+      tpl_read_mpc_rnd (datafile_context, &p->mpc_rnd);
       break;
 
     default:
       fprintf (stderr, "read_line: unsupported type.\n");
       exit (1);
     }
-#endif
 }
 
 void
@@ -88,4 +100,102 @@ read_line (mpc_datafile_context_t* datafile_context,
     {
       read_param (datafile_context, &(params->P[in]), params->T[in]);
     }
+}
+
+/* read primitives */
+static void
+tpl_skip_line (mpc_datafile_context_t* datafile_context)
+   /* skips characters until reaching '\n' or EOF; */
+   /* '\n' is skipped as well                      */
+{
+   while (datafile_context->nextchar != EOF && datafile_context->nextchar != '\n')
+     datafile_context->nextchar = getc (datafile_context->fd);
+   if (datafile_context->nextchar != EOF)
+     {
+       datafile_context->line_number ++;
+       datafile_context->nextchar = getc (datafile_context->fd);
+     }
+}
+
+static void
+tpl_skip_whitespace (mpc_datafile_context_t* datafile_context)
+   /* skips over whitespace if any until reaching EOF */
+   /* or non-whitespace                               */
+{
+   while (isspace (datafile_context->nextchar))
+     {
+       if (datafile_context->nextchar == '\n')
+         datafile_context->line_number ++;
+       datafile_context->nextchar = getc (datafile_context->fd);
+     }
+}
+
+void
+tpl_skip_whitespace_comments (mpc_datafile_context_t* datafile_context)
+   /* skips over all whitespace and comments, if any */
+{
+   tpl_skip_whitespace (datafile_context);
+   while (datafile_context->nextchar == '#') {
+      tpl_skip_line (datafile_context);
+      if (datafile_context->nextchar != EOF)
+         tpl_skip_whitespace (datafile_context);
+   }
+}
+
+
+void
+tpl_read_int (mpc_datafile_context_t* datafile_context, int *nread, const char *name)
+{
+  int n = 0;
+
+  if (datafile_context->nextchar == EOF)
+    {
+      printf ("Error: Unexpected EOF when reading int "
+              "in file '%s' line %lu\n",
+              datafile_context->pathname, datafile_context->line_number);
+      exit (1);
+    }
+  ungetc (datafile_context->nextchar, datafile_context->fd);
+  n = fscanf (datafile_context->fd, "%i", nread);
+  if (ferror (datafile_context->fd) || n == 0 || n == EOF)
+    {
+      printf ("Error: Cannot read %s in file '%s' line %lu\n",
+              name, datafile_context->pathname, datafile_context->line_number);
+      exit (1);
+    }
+  datafile_context->nextchar = getc (datafile_context->fd);
+  tpl_skip_whitespace_comments (datafile_context);
+}
+
+/* All following read routines skip over whitespace and comments; */
+/* so after calling them, nextchar is either EOF or the beginning */
+/* of a non-comment token.                                        */
+void
+tpl_read_ternary (mpc_datafile_context_t* datafile_context, int* ternary)
+{
+  switch (datafile_context->nextchar)
+    {
+    case '!':
+      *ternary = TERNARY_ERROR;
+      break;
+    case '?':
+      *ternary = TERNARY_NOT_CHECKED;
+      break;
+    case '+':
+      *ternary = +1;
+      break;
+    case '0':
+      *ternary = 0;
+      break;
+    case '-':
+      *ternary = -1;
+      break;
+    default:
+      printf ("Error: Unexpected ternary value '%c' in file '%s' line %lu\n",
+              datafile_context->nextchar, datafile_context->pathname, datafile_context->line_number);
+      exit (1);
+    }
+
+  datafile_context->nextchar = getc (datafile_context->fd);
+  tpl_skip_whitespace_comments (datafile_context);
 }
