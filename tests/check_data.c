@@ -1,4 +1,4 @@
-/* check_data.c -- Check computed data against test data.
+/* check_data.c -- Check computed data against reference result.
 
 Copyright (C) 2012 INRIA
 
@@ -20,38 +20,46 @@ along with this program. If not, see http://www.gnu.org/licenses/ .
 
 #include "templates.h"
 
-static void
+#define MPC_INEX_CMP(r, i, c)                                 \
+  (((r) == TERNARY_NOT_CHECKED || (r) == MPC_INEX_RE(c))      \
+   && ((i) == TERNARY_NOT_CHECKED || (i) == MPC_INEX_IM (c)))
+
+static int
 check_param  (mpc_datafile_context_t* datafile_context,
               mpc_operand_t* got, mpc_operand_t* expected, mpc_param_t t)
 {
   switch (t)
     {
-      /*         case NATIVE_INT: */
-      /*           break; */
-/*     case NATIVE_UL: */
-/*       break; */
-/*     case NATIVE_L: */
-/*       break; */
-/*     case NATIVE_D: */
-/*       break; */
+    case NATIVE_INT:
+      return got->i == expected->i;
+    case NATIVE_UL:
+      return got->ui == expected->ui;
+    case NATIVE_L:
+      return got->si == expected->si;
+    case NATIVE_D:
+      return got->d == expected->d;
 
-      /* TODO */
-      /*         case GMP_Z: */
-      /*           break; */
-      /*         case GMP_Q: */
-      /*           break; */
-      /*         case GMP_F: */
-      /*           break; */
+#if 0
+    case GMP_Z:
+      break;
+    case GMP_Q:
+      break;
+    case GMP_F:
+      break;
 
-/*     case MPFR_INEX: */
-/*       break; */
-/*     case MPFR: */
-/*       break; */
+    case MPFR_INEX:
+      break;
+    case MPFR:
+      break;
+#endif
 
-/*     case MPC_INEX: */
-/*       break; */
-/*     case MPC: */
-/*       break; */
+    case MPC_INEX:
+      return MPC_INEX_CMP (expected->mpc_inex_check[0],
+                           expected->mpc_inex_check[1],
+                           got->mpc_inex);
+
+    case MPC:
+      return same_mpc_value (got->mpc, expected->mpc, expected->known_signs);
 
     default:
       fprintf (stderr, "check_data: unsupported type.\n");
@@ -60,15 +68,40 @@ check_param  (mpc_datafile_context_t* datafile_context,
 }
 
 void
-check_data (mpc_datafile_context_t* datafile_context,
-            mpc_fun_param_t* params)
+check_data (mpc_datafile_context_t* dc, mpc_fun_param_t* params)
 {
-  int out;
+  int out, i;
   int total = params->nbout + params->nbin;
 
   for (out = 0; out < params->nbout; out++)
     {
-      check_param (datafile_context, &(params->P[out]),
-                   &(params->P[total + out]), params->T[out]);
+      if (!check_param (dc, &(params->P[out]), &(params->P[total + out]),
+                        params->T[out]))
+        {
+          printf ("%s() failed (line %lu, file %s)\n",
+                  params->name, dc->test_line_number, dc->pathname);
+
+          for (i = 0; i < params->nbin; i++)
+            {
+              printf ("op%d", i + 1);
+              print_parameter (params, params->nbout + i);
+            }
+          
+          for (i = 0; i < params->nbout; i++)
+            {
+              if ((params->T[i] == MPFR_INEX && params->T[out] != MPFR_INEX)
+                  || (params->T[i] == MPC_INEX && params->T[out] != MPC_INEX))
+                continue; /* don't print inexact flag if it is correct */
+
+              printf ("     got%c",
+                      (total + i > params->nbout ? '\0' : i + '0'));
+              print_parameter (params, i);
+              printf ("expected%c",
+                      (total + i > params->nbout ? '\0' : i + '0'));
+              print_parameter (params, total + i);
+            }
+          printf ("\n");
+          exit (1);
+        }
     }
 }

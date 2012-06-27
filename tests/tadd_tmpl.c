@@ -1,6 +1,6 @@
 /* tadd_tmpl.c -- templated test file for mpc_add.
 
-Copyright (C) 2008, 2010, 2011 INRIA
+Copyright (C) 2008, 2010, 2011, 2012 INRIA
 
 This file is part of GNU MPC.
 
@@ -54,6 +54,13 @@ check_ternary_value (void)
 
 #define MPC_FUNCTION_CALL                                               \
   P[0].mpc_inex = mpc_add (P[1].mpc, P[2].mpc, P[3].mpc, P[4].mpc_rnd)
+
+#if 0
+#define MPC_FUNCTION_CALL_REUSE_OP1                                     \
+  P[0].mpc_inex = mpc_add (P[1].mpc, P[1].mpc, P[3].mpc, P[4].mpc_rnd)
+#define MPC_FUNCTION_CALL_REUSE_OP2                                     \
+  P[0].mpc_inex = mpc_add (P[1].mpc, P[2].mpc, P[1].mpc, P[4].mpc_rnd)
+#endif
 
 #include "data_check.tpl"
 

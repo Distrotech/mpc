@@ -18,6 +18,8 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program. If not, see http://www.gnu.org/licenses/ .
 */
 
+#include <stdio.h>
+
 #include "templates.h"
 
 static void
@@ -26,11 +28,8 @@ init_param (mpc_operand_t* p, mpc_param_t t)
   switch (t)
     {
     case NATIVE_INT:
-      break;
     case NATIVE_UL:
-      break;
     case NATIVE_L:
-      break;
     case NATIVE_D:
       break;
 
@@ -45,13 +44,19 @@ init_param (mpc_operand_t* p, mpc_param_t t)
     case MPFR_INEX:
       break;
     case MPFR:
-      mpfr_init2 (&(p->mpfr), 53);
+      mpfr_init2 (p->mpfr, 53);
       break;
 
     case MPC_INEX:
       break;
     case MPC:
-      mpc_init2 (&(p->mpc), 53);
+      mpc_init2 (p->mpc, 53);
+      break;
+
+    case MPFR_RND:
+      break;
+
+    case MPC_RND:
       break;
 
     default:

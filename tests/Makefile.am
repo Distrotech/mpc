@@ -41,8 +41,9 @@ check_PROGRAMS = tabs tacos tacosh tadd tadd_fr tadd_si tadd_ui targ	\
 check_LTLIBRARIES=libmpc-tests.la
 libmpc_tests_la_SOURCES=mpc-tests.h random.c tgeneric.c read_data.c	\
   comparisons.c templates.h check_data.c clear_parameters.c		\
-  init_parameters.c open_datafile.c  read_description.c read_line.c \
-  tpl_read_mpfr.c tpl_read_mpc.c
+  close_datafile.c copy_parameter.c init_parameters.c open_datafile.c	\
+  print_parameter.c read_description.c read_line.c tpl_mpc.c		\
+  tpl_mpfr.c
 
 TEMPLATES = data_check.tpl add.dsc add_fr.dsc add_si.dsc add_ui.dsc
 

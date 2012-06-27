@@ -1,4 +1,4 @@
-/* tpl_read_mpfr.c -- Read test mpfr data in file.
+/* tpl_mpfr.c --  Helper functions for mpfr data.
 
 Copyright (C) 2012 INRIA
 

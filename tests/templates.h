@@ -99,25 +99,40 @@ typedef struct {
   int nextchar;
 } mpc_datafile_context_t;
 
-void open_datafile (mpc_datafile_context_t* datafile_context,
-                    const char * data_filename);
-void    tpl_read_int (mpc_datafile_context_t* datafile_context, int *nread, const char *name);
-void    tpl_skip_whitespace_comments (mpc_datafile_context_t* datafile_context);
-
-void    tpl_read_ternary (mpc_datafile_context_t* datafile_context, int* ternary);
-void    tpl_read_mpfr (mpc_datafile_context_t* datafile_context, mpfr_ptr x, int *known_sign);
-void    tpl_read_mpfr_rnd (mpc_datafile_context_t* datafile_context, mpfr_rnd_t* rnd);
-void    tpl_read_mpfr_inex (mpc_datafile_context_t* datafile_context, int *nread);
-
-void    tpl_read_mpc_inex (mpc_datafile_context_t* datafile_context, int *nread);
-void    tpl_read_mpc (mpc_datafile_context_t* datafile_context, mpc_ptr z, known_signs_t *ks);
-void    tpl_read_mpc_rnd (mpc_datafile_context_t* datafile_context, mpc_rnd_t* rnd);
-
+void    open_datafile       (mpc_datafile_context_t* datafile_context,
+                             const char * data_filename);
+void    close_datafile      (mpc_datafile_context_t *dc);
 void    init_parameters     (mpc_fun_param_t *params);
 void    clear_parameters    (mpc_fun_param_t *params);
+void    print_parameter     (mpc_fun_param_t *params, int index);
+void    copy_parameter      (mpc_fun_param_t *params, int index);
 void    read_line           (mpc_datafile_context_t* datafile_context,
                              mpc_fun_param_t* params);
 void    check_data          (mpc_datafile_context_t* datafile_context,
+                             mpc_fun_param_t* params);
+/* helper reading functions */
+void    tpl_read_int        (mpc_datafile_context_t* datafile_context,
+                             int *nread, const char *name);
+void    tpl_skip_whitespace_comments (mpc_datafile_context_t* datafile_context);
+
+void    tpl_read_ternary    (mpc_datafile_context_t* datafile_context,
+                             int* ternary);
+void    tpl_read_mpfr       (mpc_datafile_context_t* datafile_context,
+                             mpfr_ptr x, int *known_sign);
+void    tpl_read_mpfr_rnd   (mpc_datafile_context_t* datafile_context,
+                             mpfr_rnd_t* rnd);
+void    tpl_read_mpfr_inex  (mpc_datafile_context_t* datafile_context,
+                             int *nread);
+
+void    tpl_read_mpc_inex   (mpc_datafile_context_t* datafile_context,
+                             int *nread);
+void    tpl_read_mpc        (mpc_datafile_context_t* datafile_context,
+                             mpc_ptr z, known_signs_t *ks);
+void    tpl_read_mpc_rnd    (mpc_datafile_context_t* datafile_context,
+                             mpc_rnd_t* rnd);
+
+/* helper comparison functions */
+void    tpl_cmp_mpc         (mpc_datafile_context_t* datafile_context,
                              mpc_fun_param_t* params);
 
 #endif /*__TEMPLATES_H*/

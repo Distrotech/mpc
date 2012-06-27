@@ -54,6 +54,12 @@ clear_param (mpc_operand_t* p, mpc_param_t t)
       mpc_clear (p->mpc);
       break;
 
+    case MPFR_RND:
+      break;
+
+    case MPC_RND:
+      break;
+
     default:
       fprintf (stderr, "clear_parameters: unsupported type.\n");
       exit (1);

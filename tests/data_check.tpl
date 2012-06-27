@@ -1,9 +1,16 @@
-/* data_check.tpl -- template file for checking result against data
+/* Data_check.tpl -- template file for checking result against data
    file.
 
    Usage: Before including this template file in your source file,
-   #define the prototype of the function under test in the CALL
-   symbol, see tadd_tmpl.c for an example.
+   #define the prototype of the function under test in the
+   CALL_MPC_FUNCTION symbol, see tadd_tmpl.c for an example.
+
+   To test the reuse of the first parameter, #define the
+   MPC_FUNCTION_CALL_REUSE_OP1 and MPC_FUNCTION_CALL_REUSE_OP2 symbols
+   with the first and second input parameter reused as the output, see
+   tadd_tmpl.c for an example. It is not possible to test parameter
+   reuse in functions with two output (like mpc_sin_cos) with this
+   system.
 
 Copyright (C) 2012 INRIA
 
@@ -40,12 +47,22 @@ data_check_template (const char* descr_file, const char * data_file)
   open_datafile (dc, data_file);
   while (datafile_context.nextchar != EOF) {
     read_line (dc, &params);
-
     MPC_FUNCTION_CALL;
-
     check_data (dc, &params);
+
+#ifdef MPC_FUNCTION_CALL_REUSE_OP1
+    copy_parameter (&params, 2);
+    MPC_FUNCTION_CALL_REUSE_OP1;
+    check_data_reuse_op1 (dc, &params);
+#endif
+
+#ifdef MPC_FUNCTION_CALL_REUSE_OP2
+    copy_parameter (&params, 3);
+    MPC_FUNCTION_CALL_REUSE_OP2;
+    check_data_reuse_op2 (dc, &params);
+#endif
   }
-/*   close_datafile (dc); */
+  close_datafile (dc);
 
   clear_parameters (&params);
 

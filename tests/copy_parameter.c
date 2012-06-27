@@ -1,4 +1,4 @@
-/* tplread_mpc.c -- Read test mpc data in file.
+/* copy_parameter.c -- Helper function for parameter copy.
 
 Copyright (C) 2012 INRIA
 
@@ -20,26 +20,14 @@ along with this program. If not, see http://www.gnu.org/licenses/ .
 
 #include "templates.h"
 
-
 void
-tpl_read_mpc_rnd (mpc_datafile_context_t* datafile_context, mpc_rnd_t* rnd)
+copy_parameter (mpc_fun_param_t *params, int index)
 {
-   mpfr_rnd_t re, im;
-   tpl_read_mpfr_rnd (datafile_context, &re);
-   tpl_read_mpfr_rnd (datafile_context, &im);
-   *rnd = RNDC (re, im);
-}
+#if 0
+  if (params.T[1] != params.T[n])
+    exit (1);
 
-void
-tpl_read_mpc (mpc_datafile_context_t* datafile_context, mpc_ptr z, known_signs_t *ks)
-{
-  tpl_read_mpfr (datafile_context, mpc_realref (z), ks == NULL ? NULL : &ks->re);
-  tpl_read_mpfr (datafile_context, mpc_imagref (z), ks == NULL ? NULL : &ks->im);
-}
-
-void
-tpl_read_mpc_inex (mpc_datafile_context_t* datafile_context, int *nread)
-{
-  tpl_read_ternary(datafile_context, &(nread[0]));
-  tpl_read_ternary(datafile_context, &(nread[1]));
+  switch (params.T[1])
+    {}
+#endif
 }
