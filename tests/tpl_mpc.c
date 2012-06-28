@@ -42,3 +42,21 @@ tpl_read_mpc_inex (mpc_datafile_context_t* datafile_context, int *nread)
   tpl_read_ternary(datafile_context, &(nread[0]));
   tpl_read_ternary(datafile_context, &(nread[1]));
 }
+
+
+void
+tpl_copy_mpc (mpc_ptr dest, mpc_srcptr src)
+{
+  /* source and destination are assumed to be of the same precision , so the
+     copy is exact (no rounding) */
+  mpc_set (dest, src, MPC_RNDNN);
+}
+
+int
+tpl_same_mpc_value (mpc_ptr z1, mpc_ptr z2, known_signs_t known_signs)
+{
+   return tpl_same_mpfr_value (mpc_realref (z1), mpc_realref (z2),
+                               known_signs.re)
+     && tpl_same_mpfr_value (mpc_imagref (z1), mpc_imagref (z2),
+                             known_signs.im);
+}

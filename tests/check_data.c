@@ -39,19 +39,20 @@ check_param  (mpc_datafile_context_t* datafile_context,
     case NATIVE_D:
       return got->d == expected->d;
 
-#if 0
     case GMP_Z:
-      break;
+      return mpz_cmp (got->mpz, expected->mpz);
     case GMP_Q:
-      break;
+      return mpq_cmp (got->mpq, expected->mpq);
     case GMP_F:
-      break;
+      return mpf_cmp (got->mpf, expected->mpf);
 
     case MPFR_INEX:
-      break;
+      return expected->mpfr_inex == TERNARY_NOT_CHECKED
+        || got->mpfr_inex == expected->mpfr_inex;
+
     case MPFR:
-      break;
-#endif
+      return tpl_same_mpfr_value (got->mpfr, expected->mpfr,
+                                  expected->known_signs.re);
 
     case MPC_INEX:
       return MPC_INEX_CMP (expected->mpc_inex_check[0],
@@ -59,7 +60,8 @@ check_param  (mpc_datafile_context_t* datafile_context,
                            got->mpc_inex);
 
     case MPC:
-      return same_mpc_value (got->mpc, expected->mpc, expected->known_signs);
+      return tpl_same_mpc_value (got->mpc, expected->mpc,
+                                 expected->known_signs);
 
     default:
       fprintf (stderr, "check_data: unsupported type.\n");
@@ -68,7 +70,7 @@ check_param  (mpc_datafile_context_t* datafile_context,
 }
 
 void
-check_data (mpc_datafile_context_t* dc, mpc_fun_param_t* params)
+check_data (mpc_datafile_context_t* dc, mpc_fun_param_t* params, int reused_op)
 {
   int out, i;
   int total = params->nbout + params->nbin;
@@ -80,13 +82,16 @@ check_data (mpc_datafile_context_t* dc, mpc_fun_param_t* params)
         {
           printf ("%s() failed (line %lu, file %s)\n",
                   params->name, dc->test_line_number, dc->pathname);
+          if (reused_op)
+            printf (" when reusing input parameter #%d "
+                    "as output parameter #1\n", reused_op);
 
           for (i = 0; i < params->nbin; i++)
             {
               printf ("op%d", i + 1);
               print_parameter (params, params->nbout + i);
             }
-          
+
           for (i = 0; i < params->nbout; i++)
             {
               if ((params->T[i] == MPFR_INEX && params->T[out] != MPFR_INEX)

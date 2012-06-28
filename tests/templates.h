@@ -1,4 +1,4 @@
-/* templates.h -- Tests parameters functions.
+/* templates.h -- Templated parameters functions.
 
 Copyright (C) 2012 INRIA
 
@@ -67,6 +67,7 @@ typedef struct {
 #endif
   mpz_t                mpz;
   mpq_t                mpq;
+  mpf_t                mpf;
   mpfr_t               mpfr;
   mpfr_rnd_t           mpfr_rnd;
   int                  mpfr_inex;
@@ -88,9 +89,10 @@ typedef struct {
 } mpc_fun_param_t; 
 
 
-void read_description(mpc_fun_param_t* param, const char *file);
-const char*  read_description_findname (mpc_param_t e);
+void    read_description    (mpc_fun_param_t* param, const char *file);
+const char* read_description_findname (mpc_param_t e);
 
+/* file functions */
 typedef struct {
   char *pathname;
   FILE *fd;
@@ -102,19 +104,27 @@ typedef struct {
 void    open_datafile       (mpc_datafile_context_t* datafile_context,
                              const char * data_filename);
 void    close_datafile      (mpc_datafile_context_t *dc);
-void    init_parameters     (mpc_fun_param_t *params);
-void    clear_parameters    (mpc_fun_param_t *params);
-void    print_parameter     (mpc_fun_param_t *params, int index);
-void    copy_parameter      (mpc_fun_param_t *params, int index);
+
+/* data file functions */
 void    read_line           (mpc_datafile_context_t* datafile_context,
                              mpc_fun_param_t* params);
 void    check_data          (mpc_datafile_context_t* datafile_context,
-                             mpc_fun_param_t* params);
-/* helper reading functions */
+                             mpc_fun_param_t* params, int index_reused_operand);
+
+/* parameters templated functions */
+void    init_parameters     (mpc_fun_param_t *params);
+void    clear_parameters    (mpc_fun_param_t *params);
+void    print_parameter     (mpc_fun_param_t *params, int index);
+int     copy_parameter      (mpc_fun_param_t *params,
+                             int index_dest, int index_src);
+
 void    tpl_read_int        (mpc_datafile_context_t* datafile_context,
                              int *nread, const char *name);
+void    tpl_read_ui         (mpc_datafile_context_t* datafile_context,
+                             unsigned long int *ui);
+void    tpl_read_si         (mpc_datafile_context_t* datafile_context,
+                             long int *si);
 void    tpl_skip_whitespace_comments (mpc_datafile_context_t* datafile_context);
-
 void    tpl_read_ternary    (mpc_datafile_context_t* datafile_context,
                              int* ternary);
 void    tpl_read_mpfr       (mpc_datafile_context_t* datafile_context,
@@ -123,7 +133,6 @@ void    tpl_read_mpfr_rnd   (mpc_datafile_context_t* datafile_context,
                              mpfr_rnd_t* rnd);
 void    tpl_read_mpfr_inex  (mpc_datafile_context_t* datafile_context,
                              int *nread);
-
 void    tpl_read_mpc_inex   (mpc_datafile_context_t* datafile_context,
                              int *nread);
 void    tpl_read_mpc        (mpc_datafile_context_t* datafile_context,
@@ -131,8 +140,15 @@ void    tpl_read_mpc        (mpc_datafile_context_t* datafile_context,
 void    tpl_read_mpc_rnd    (mpc_datafile_context_t* datafile_context,
                              mpc_rnd_t* rnd);
 
-/* helper comparison functions */
-void    tpl_cmp_mpc         (mpc_datafile_context_t* datafile_context,
-                             mpc_fun_param_t* params);
+int     tpl_same_mpfr_value (mpfr_ptr x1, mpfr_ptr x2, int known_sign);
+int     tpl_same_mpc_value  (mpc_ptr z1, mpc_ptr z2, known_signs_t known_signs);
+
+void    tpl_copy_int        (int *dest, const int * const src);
+void    tpl_copy_ui         (unsigned long int *dest,
+                             const unsigned long int * const src);
+void    tpl_copy_si         (long int *dest, const long int * const src);
+void    tpl_copy_d          (double *dest, const double * const src);
+void    tpl_copy_mpfr       (mpfr_ptr dest, mpfr_srcptr src);
+void    tpl_copy_mpc        (mpc_ptr dest, mpc_srcptr src);
 
 #endif /*__TEMPLATES_H*/

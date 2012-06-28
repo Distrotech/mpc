@@ -54,25 +54,43 @@ print_parameter (mpc_fun_param_t* params, int index)
 {
   switch (params->T[index])
     {
-#if 0
     case NATIVE_INT:
+      printf ("= %d\n", params->P[index].i);
+      break;
+
     case NATIVE_UL:
+      printf ("= %lu\n", params->P[index].ui);
+      break;
+
     case NATIVE_L:
+      printf ("= %ld\n", params->P[index].si);
+      break;
+
     case NATIVE_D:
+      printf ("= %e\n", params->P[index].d);
       break;
 
     case GMP_Z:
+      gmp_printf ("= %Zd\n", params->P[index].mpz);
       break;
     case GMP_Q:
+      gmp_printf ("= %Qd\n", params->P[index].mpq);
       break;
     case GMP_F:
+      gmp_printf ("= %Fe\n", params->P[index].mpf);
       break;
 
     case MPFR_INEX:
+      printf (" ternary value = %s\n",
+              MPFR_INEX_STR (params->P[index].mpfr_inex));
       break;
+
     case MPFR:
+      printf ("[%lu]=",
+              (unsigned long int) mpfr_get_prec (params->P[index].mpfr));
+      mpfr_out_str (stdout, 2, 0, params->P[index].mpfr, GMP_RNDN);
+      printf ("\n");
       break;
-#endif
 
     case MPC_INEX:
       if (index >= params->nbout + params->nbin)

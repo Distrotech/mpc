@@ -33,29 +33,29 @@ init_param (mpc_operand_t* p, mpc_param_t t)
     case NATIVE_D:
       break;
 
-      /* TODO */
-      /*         case GMP_Z: */
-      /*           break; */
-      /*         case GMP_Q: */
-      /*           break; */
-      /*         case GMP_F: */
-      /*           break; */
+    case GMP_Z:
+      mpz_init (p->mpz);
+      break;
+    case GMP_Q:
+      mpq_init (p->mpq);
+      break;
+    case GMP_F:
+      mpf_init (p->mpf);
+      break;
 
     case MPFR_INEX:
       break;
     case MPFR:
-      mpfr_init2 (p->mpfr, 53);
+      mpfr_init2 (p->mpfr, 512);
       break;
 
     case MPC_INEX:
       break;
     case MPC:
-      mpc_init2 (p->mpc, 53);
+      mpc_init2 (p->mpc, 512);
       break;
 
     case MPFR_RND:
-      break;
-
     case MPC_RND:
       break;
 

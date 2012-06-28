@@ -1,4 +1,4 @@
-/* tadd_tmpl.c -- templated test file for mpc_add.
+/* tadd_fr_tmpl.c -- templated test file for mpc_add_fr.
 
 Copyright (C) 2008, 2010, 2011, 2012 INRIA
 
@@ -22,60 +22,58 @@ along with this program. If not, see http://www.gnu.org/licenses/ .
 #include "mpc-tests.h"
 
 static void
-check_ternary_value (void)
+check_ternary_value (mpfr_prec_t prec_max, mpfr_prec_t step)
 {
-  mpc_t x, y, z;
   mpfr_prec_t prec;
+  mpc_t z;
+  mpfr_t f;
 
-  mpc_init2 (x, 2);
-  mpc_init2 (y, 2);
   mpc_init2 (z, 2);
+  mpfr_init (f);
 
-  for (prec = 2; prec <= 1000; prec++)
+  for (prec = 2; prec < prec_max; prec += step)
     {
-      mpc_set_prec (x, prec);
-      mpc_set_prec (y, prec);
+      mpc_set_prec (z, prec);
+      mpfr_set_prec (f, prec);
 
-      mpc_set_ui (x, 1, MPC_RNDNN);
-      mpc_mul_2exp (x, x, (unsigned long int) prec, MPC_RNDNN);
-      mpc_set_ui (y, 1, MPC_RNDNN);
-
-      if (mpc_add (z, x, y, MPC_RNDNN) == 0)
+      mpc_set_ui (z, 1, MPC_RNDNN);
+      mpfr_set_ui (f, 1, GMP_RNDN);
+      if (mpc_add_fr (z, z, f, MPC_RNDNZ))
         {
-          fprintf (stderr, "Error in mpc_add: 2^(-prec)+1 cannot be exact\n");
+          printf ("Error in mpc_add_fr: 1+1 should be exact\n");
+          exit (1);
+        }
+
+      mpc_set_ui (z, 1, MPC_RNDNN);
+      mpc_mul_2exp (z, z, (unsigned long int) prec, MPC_RNDNN);
+      if (mpc_add_fr (z, z, f, MPC_RNDNN) == 0)
+        {
+          fprintf (stderr, "Error in mpc_add_fr: 2^prec+1 cannot be exact\n");
           exit (1);
         }
     }
-
-  mpc_clear (x);
-  mpc_clear (y);
   mpc_clear (z);
+  mpfr_clear (f);
 }
 
 #define MPC_FUNCTION_CALL                                               \
-  P[0].mpc_inex = mpc_add (P[1].mpc, P[2].mpc, P[3].mpc, P[4].mpc_rnd)
+  P[0].mpc_inex = mpc_add_fr (P[1].mpc, P[2].mpc, P[3].mpfr, P[4].mpc_rnd)
 #define MPC_FUNCTION_CALL_REUSE_OP1                                     \
-  P[0].mpc_inex = mpc_add (P[1].mpc, P[1].mpc, P[3].mpc, P[4].mpc_rnd)
-#define MPC_FUNCTION_CALL_REUSE_OP2                                     \
-  P[0].mpc_inex = mpc_add (P[1].mpc, P[2].mpc, P[1].mpc, P[4].mpc_rnd)
+  P[0].mpc_inex = mpc_add_fr (P[1].mpc, P[1].mpc, P[3].mpfr, P[4].mpc_rnd)
 
 #include "data_check.tpl"
 
 int
 main (void)
 {
-  DECL_FUNC (C_CC, f, mpc_add);
-  f.properties = FUNC_PROP_SYMETRIC;
-
+  DECL_FUNC (CCF, f, mpc_add_fr);
   test_start ();
 
-  check_ternary_value();
+  check_ternary_value (1024, 1);
 
-  data_check_template ("add.dsc", "add.dat");
-
-  tgeneric (f, 2, 1024, 7, -1);
+  data_check_template ("add_fr.dsc", "add_fr.dat");
+  tgeneric (f, 2, 1024, 7, 10);
 
   test_end ();
-
   return 0;
 }

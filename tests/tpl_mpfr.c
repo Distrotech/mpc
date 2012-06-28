@@ -122,3 +122,27 @@ tpl_read_mpfr_inex (mpc_datafile_context_t* datafile_context, int *nread)
 {
   tpl_read_ternary(datafile_context, nread);
 }
+
+int
+tpl_same_mpfr_value (mpfr_ptr x1, mpfr_ptr x2, int known_sign)
+{
+   /* The sign of zeroes and infinities is checked only when
+      known_sign is true.                                    */
+   if (mpfr_nan_p (x1))
+      return mpfr_nan_p (x2);
+   if (mpfr_inf_p (x1))
+      return mpfr_inf_p (x2) &&
+            (!known_sign || mpfr_signbit (x1) == mpfr_signbit (x2));
+   if (mpfr_zero_p (x1))
+      return mpfr_zero_p (x2) &&
+            (!known_sign || mpfr_signbit (x1) == mpfr_signbit (x2));
+   return mpfr_cmp (x1, x2) == 0;
+}
+
+void
+tpl_copy_mpfr (mpfr_ptr dest, mpfr_srcptr src)
+{
+  /* source and destination are assumed to be of the same precision , so the
+     copy is exact (no rounding) */
+  mpfr_set (dest, src, GMP_RNDN);
+}

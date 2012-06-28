@@ -48,18 +48,22 @@ data_check_template (const char* descr_file, const char * data_file)
   while (datafile_context.nextchar != EOF) {
     read_line (dc, &params);
     MPC_FUNCTION_CALL;
-    check_data (dc, &params);
+    check_data (dc, &params, 0);
 
 #ifdef MPC_FUNCTION_CALL_REUSE_OP1
-    copy_parameter (&params, 2);
-    MPC_FUNCTION_CALL_REUSE_OP1;
-    check_data_reuse_op1 (dc, &params);
+    if (copy_parameter (&params, 1, 2) == 0)
+      {
+        MPC_FUNCTION_CALL_REUSE_OP1;
+        check_data (dc, &params, 2);
+      }
 #endif
 
 #ifdef MPC_FUNCTION_CALL_REUSE_OP2
-    copy_parameter (&params, 3);
-    MPC_FUNCTION_CALL_REUSE_OP2;
-    check_data_reuse_op2 (dc, &params);
+    if (copy_parameter (&params, 1, 3) == 0)
+      {
+        MPC_FUNCTION_CALL_REUSE_OP2;
+        check_data (dc, &params, 3);
+      }
 #endif
   }
   close_datafile (dc);

@@ -26,21 +26,20 @@ clear_param (mpc_operand_t* p, mpc_param_t t)
   switch (t)
     {
     case NATIVE_INT:
-      break;
     case NATIVE_UL:
-      break;
     case NATIVE_L:
-      break;
     case NATIVE_D:
       break;
 
-      /* TODO */
-      /*         case GMP_Z: */
-      /*           break; */
-      /*         case GMP_Q: */
-      /*           break; */
-      /*         case GMP_F: */
-      /*           break; */
+    case GMP_Z:
+      mpz_clear (p->mpz);
+      break;
+    case GMP_Q:
+      mpq_clear (p->mpq);
+      break;
+    case GMP_F:
+      mpf_clear (p->mpf);
+      break;
 
     case MPFR_INEX:
       break;
@@ -55,8 +54,6 @@ clear_param (mpc_operand_t* p, mpc_param_t t)
       break;
 
     case MPFR_RND:
-      break;
-
     case MPC_RND:
       break;
 

@@ -28,7 +28,7 @@ AM_LDFLAGS = -no-install
 LOADLIBES=$(DEFS) -I$(top_srcdir)/src -I$(top_builddir) $(CPPFLAGS)	\
   $(CFLAGS) -L$(top_builddir)/tests/.libs -lmpc-tests -lmpc -lm $(LIBS)
 
-TEMPLATED = tadd_tmpl
+TEMPLATED = tadd_tmpl tadd_fr_tmpl
 
 check_PROGRAMS = tabs tacos tacosh tadd tadd_fr tadd_si tadd_ui targ	\
   tasin tasinh tatan tatanh tconj tcos tcosh tdiv tdiv_2exp tdiv_fr	\
@@ -43,7 +43,7 @@ libmpc_tests_la_SOURCES=mpc-tests.h random.c tgeneric.c read_data.c	\
   comparisons.c templates.h check_data.c clear_parameters.c		\
   close_datafile.c copy_parameter.c init_parameters.c open_datafile.c	\
   print_parameter.c read_description.c read_line.c tpl_mpc.c		\
-  tpl_mpfr.c
+  tpl_mpfr.c tpl_native.c
 
 TEMPLATES = data_check.tpl add.dsc add_fr.dsc add_si.dsc add_ui.dsc
 
