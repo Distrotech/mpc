@@ -1,6 +1,6 @@
-/* mpc_mul_fr -- Multiply a complex number by a floating-point number.
+/* mpc_div_2ui -- Divide a complex number by 2^e.
 
-Copyright (C) 2002, 2008, 2009, 2010, 2011, 2012 INRIA
+Copyright (C) 2002, 2009, 2011, 2012 INRIA
 
 This file is part of GNU MPC.
 
@@ -21,23 +21,12 @@ along with this program. If not, see http://www.gnu.org/licenses/ .
 #include "mpc-impl.h"
 
 int
-mpc_mul_fr (mpc_ptr a, mpc_srcptr b, mpfr_srcptr c, mpc_rnd_t rnd)
+mpc_div_2ui (mpc_ptr a, mpc_srcptr b, unsigned long int c, mpc_rnd_t rnd)
 {
   int inex_re, inex_im;
-  mpfr_t real;
 
-  if (c == mpc_realref (a))
-    /* We have to use a temporary variable. */
-    mpfr_init2 (real, MPC_PREC_RE (a));
-  else
-    real [0] = mpc_realref (a) [0];
-
-  inex_re = mpfr_mul (real, mpc_realref(b), c, MPC_RND_RE(rnd));
-  inex_im = mpfr_mul (mpc_imagref(a), mpc_imagref(b), c, MPC_RND_IM(rnd));
-  mpfr_set (mpc_realref (a), real, MPFR_RNDN); /* exact */
-
-  if (c == mpc_realref (a))
-    mpfr_clear (real);
+  inex_re = mpfr_div_2ui (mpc_realref(a), mpc_realref(b), c, MPC_RND_RE(rnd));
+  inex_im = mpfr_div_2ui (mpc_imagref(a), mpc_imagref(b), c, MPC_RND_IM(rnd));
 
   return MPC_INEX(inex_re, inex_im);
 }

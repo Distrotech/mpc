@@ -1,6 +1,6 @@
 /* tmul -- test file for mpc_mul.
 
-Copyright (C) 2002, 2005, 2008, 2009, 2010, 2011 INRIA
+Copyright (C) 2002, 2005, 2008, 2009, 2010, 2011, 2012 INRIA
 
 This file is part of GNU MPC.
 
@@ -84,7 +84,7 @@ static void
 check_regular (void)
 {
   mpc_t x, y;
-  mpc_rnd_t rnd_re, rnd_im;
+  int rnd_re, rnd_im;
   mpfr_prec_t prec;
 
   testmul (247, -65, -223, 416, 8, 24);
@@ -102,15 +102,15 @@ check_regular (void)
      imaginary part */
   mpc_set_prec (x, 7);
   mpc_set_prec (y, 7);
-  mpfr_set_str (mpc_realref (x), "0xB4p+733", 16, GMP_RNDN);
-  mpfr_set_str (mpc_imagref (x), "0x90p+244", 16, GMP_RNDN);
-  mpfr_set_str (mpc_realref (y), "0xECp-146", 16, GMP_RNDN);
-  mpfr_set_str (mpc_imagref (y), "0xACp-471", 16, GMP_RNDN);
+  mpfr_set_str (mpc_realref (x), "0xB4p+733", 16, MPFR_RNDN);
+  mpfr_set_str (mpc_imagref (x), "0x90p+244", 16, MPFR_RNDN);
+  mpfr_set_str (mpc_realref (y), "0xECp-146", 16, MPFR_RNDN);
+  mpfr_set_str (mpc_imagref (y), "0xACp-471", 16, MPFR_RNDN);
   cmpmul (x, y, MPC_RNDNN);
-  mpfr_set_str (mpc_realref (x), "0xB4p+733", 16, GMP_RNDN);
-  mpfr_set_str (mpc_imagref (x), "0x90p+244", 16, GMP_RNDN);
-  mpfr_set_str (mpc_realref (y), "0xACp-471", 16, GMP_RNDN);
-  mpfr_set_str (mpc_imagref (y), "-0xECp-146", 16, GMP_RNDN);
+  mpfr_set_str (mpc_realref (x), "0xB4p+733", 16, MPFR_RNDN);
+  mpfr_set_str (mpc_imagref (x), "0x90p+244", 16, MPFR_RNDN);
+  mpfr_set_str (mpc_realref (y), "0xACp-471", 16, MPFR_RNDN);
+  mpfr_set_str (mpc_imagref (y), "-0xECp-146", 16, MPFR_RNDN);
   cmpmul (x, y, MPC_RNDNN);
 
   for (prec = 2; prec < 1000; prec = (mpfr_prec_t) (prec * 1.1 + 1))
@@ -123,7 +123,7 @@ check_regular (void)
 
       for (rnd_re = 0; rnd_re < 4; rnd_re ++)
         for (rnd_im = 0; rnd_im < 4; rnd_im ++)
-          cmpmul (x, y, RNDC(rnd_re, rnd_im));
+          cmpmul (x, y, MPC_RND (rnd_re, rnd_im));
     }
 
   mpc_clear (x);

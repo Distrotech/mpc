@@ -1,6 +1,6 @@
-/* tdiv_2exp -- test file for mpc_div_2exp.
+/* tdiv_2si -- test file for mpc_div_2si.
 
-Copyright (C) 2008 INRIA
+Copyright (C) 2012 INRIA
 
 This file is part of GNU MPC.
 
@@ -23,7 +23,7 @@ along with this program. If not, see http://www.gnu.org/licenses/ .
 int
 main (void)
 {
-  DECL_FUNC (CCU, f, mpc_div_2exp);
+  DECL_FUNC (CCS, f, mpc_div_2si);
 
   test_start ();
 

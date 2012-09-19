@@ -3,6 +3,7 @@
 \usepackage[a4paper]{geometry}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{ae}
 \usepackage{amsmath,amssymb}
 \usepackage{hyperref}
 \usepackage{comment}
@@ -31,6 +32,7 @@
 \renewcommand {\theta}{\vartheta}
 \renewcommand {\leq}{\leqslant}
 \renewcommand {\geq}{\geqslant}
+\newcommand {\AGM}{\operatorname{AGM}}
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}[theorem]{Lemma}
@@ -46,7 +48,7 @@
 
 \title {MPC: Algorithms and Error Analysis}
 \author {Andreas Enge \and Philippe Th\'eveny \and Paul Zimmermann}
-\date {Draft; June 27, 2012}
+\date {Draft; September 18, 2012}
 
 \begin {document}
 \maketitle
@@ -338,6 +340,50 @@ For the converse direction, write
 \]
 \end {proof}
 
+As a corollary to Propositions~\ref {prop:relerror}
+and~\ref {prop:comrelerror}, we obtain the following result that shows how
+to transform absolute into complex relative errors.
+
+\begin {prop}
+\label {prop:comabstorelerror}
+Let $\appro z = \appro x + i \appro y$ be representable at precision~$p$.
+If
+$\error (\appro x) \leq k \, \Ulp (\appro x)$ and
+$\error (\appro y) \leq k \, \Ulp (\appro y)$, then
+\[
+\relerror (\appro z) \leq k \, 2^{1-p}.
+\]
+As in Proposition~\ref {prop:relerror}, there is an immediate generalisation
+if $\appro z$ is not representable at precision~$p$.
+\end {prop}
+
+This result can be used to analyse how rounding affects complex
+relative errors.
+
+\begin {prop}
+\label {prop:comrelround}
+Let $\relerror (\appro z) = \epsilon$.
+Then
+\[
+\relerror (\round (\appro z)) \leq
+\epsilon + c (1 + \epsilon) 2^{1-p},
+\]
+where $c = \frac {1}{2}$ if both the real and the imaginary part are
+rounded to nearest, and $c = 1$ otherwise.
+\end {prop}
+
+\begin {proof}
+Write $\corr z = (1 + \theta) \appro z$ with $|\theta| = \epsilon$.
+Applying Proposition~\ref {prop:comabstorelerror} with $\appro z$ in the
+place of $\corr z$, $\round (\appro z)$ in the place of $\appro z$
+and $c$ in the place of~$k$,
+there is a $\theta'$ with $\appro z = (1 + \theta') \round (\appro z)$
+and $|\theta'| \leq c \, 2^{1-p}$.
+So $\corr z = (1 + \theta'') \round (\appro z)$ with
+$\theta'' = (1 + \theta)(1 + \theta') - 1
+= \theta + \theta' (1 + \theta)$.
+\end {proof}
+
 
 \subsection {Real functions}
 
@@ -454,6 +500,37 @@ For the sine function, a completely analogous argument shows that
 \eqref {eq:proprealcos} also holds.
 
 
+\subsubsection {Logarithm}
+\label {sssec:propreallog}
+
+Let
+\[
+\appro x = \log (1 + \appro {x_1})
+\]
+for $\appro {x_1} > -1$.
+By the mean value theorem, there is a $\xi$ between $x_1$ and $\appro {x_1}$
+such that
+\[
+\error (\appro x) = \frac {1}{1 + \xi} \error (\appro {x_1})
+\leq \frac {1}{1 + \min (x_1, \appro {x_1})} \error (\appro {x_1}).
+\]
+For $x_1 > 0$, this implies
+\begin {eqnarray*}
+\error (\appro x)
+& \leq & \error (\appro {x_1})
+\leq
+k \, 2^{\Exp (\appro {x_1}) - \Exp (\appro x)}
+\, 2^{\Exp (\appro x) - p} \\
+& \leq & 2 \, k \, \frac {\appro {x_1}}{\appro x} \, 2^{\Exp (\appro x) - p} \\
+& \leq & 2 \, k \, \frac {\appro {x_1}}{\appro {x_1} - \appro {x_1}^2/2}
+\, 2^{\Exp (\appro x) - p}
+\end {eqnarray*}
+using $\log (1 + z) \geq z - z^2/2$ for $z > 0$.
+For $0 < x_1 \leq 1$, we have $\appro {x_1}^2/2 \leq \appro {x_1}/2$ and
+\[
+\error (\appro x)
+\leq 4 \, k \, 2^{\Exp (\appro x) - p}.
+\]
 
 
 \subsection {Complex functions}
@@ -485,7 +562,7 @@ exponent than the operands, that is, if cancellation occurs.
 If $\appro {x_1}$ and $\appro {x_2}$, have the same sign, then there
 is no cancellation, $d_{R, n} \leq 0$ and
 \[
-\error (\appro x) \leq (k_{R,1} + k_{R,2} + c_R) 2^{\Exp (\appro x) - p}.
+\error (\appro x) \leq (k_{R,1} + k_{R,2}) 2^{\Exp (\appro x) - p}.
 \]
 
 An analogous error bound holds for the imaginary part.
@@ -493,6 +570,51 @@ An analogous error bound holds for the imaginary part.
 For subtraction, the same bounds are obtained, except that the simpler bound
 now holds whenever $\appro {x_1}$ and $\appro {x_2}$ resp.
 $\appro {y_1}$ and $\appro {y_2}$ have different signs.
+
+We obtain a useful result for complex relative errors when $z_1$ and $z_2$
+lie in the same quadrant, so that cancellation occurs neither for the real
+nor for the imaginary part.
+
+\begin {lemma}
+\label {lm:arithgeom}
+Let $c_1 = a_1 + i b_1$ and $c_2 = a_2 + i b_2$ lie in the same quadrant,
+that is, $a_1 a_2$, $b_1 b_2 \geq 0$. Then
+\[
+|c_1| + |c_2| \leq \sqrt 2 \cdot |c_1 + c_2|.
+\]
+\end {lemma}
+
+\begin {proof}
+One readily verifies that
+\[
+2 |c_1 + c_2|^2 - (|c_1| + |c_2|)^2
+= (|c_1| - |c_2|)^2 + 4 (a_1 a_2 + b_1 b_2)
+\geq 0
+\]
+\end {proof}
+
+Assume now that $\corr {z_n} = (1 + \theta_n) \appro {z_n}$
+with $\epsilon_n = |\theta_n|$ lie in the same quadrant.
+Then
+$\corr z = (1 + \theta) \appro z$
+with
+\[
+\theta = \frac {\theta_1 \appro {z_1} + \theta_2 \appro {z_2}}
+               {\appro {z_1} + \appro {z_2}}.
+\]
+and
+\begin {equation}
+\label {eq:propaddrel}
+\relerror (\appro z)
+\leq
+\max (\epsilon_1, \epsilon_2)
+   \frac {|\appro {z_1}| + |\appro {z_2}|}{|\appro {z_1} + \appro {z_2}|}
+\leq
+\sqrt 2 \, \max (\epsilon_1, \epsilon_2)
+\end {equation}
+by Lemma~\ref {lm:arithgeom}.
+
+
 
 
 \subsubsection {Multiplication}
@@ -636,7 +758,11 @@ A coarser bound may be obtained more easily by considering complex
 relative errors. Write $\corr {z_n} = (1 + \theta_n) \appro {z_n}$
 with $\epsilon_n = | \theta_n |$. Then $\corr z = (1 + \theta) \appro z$
 with $\theta = \theta_1 + \theta_2 + \theta_1 \theta_2$ and
-$\epsilon = |\theta| \leq \epsilon_1 + \epsilon_2 + \epsilon_1 \epsilon_2$.
+\begin {equation}
+\label {eq:propmulrel}
+\epsilon = \relerror (\appro z)
+\leq \epsilon_1 + \epsilon_2 + \epsilon_1 \epsilon_2.
+\end {equation}
 By Proposition~\ref {prop:relerror},
 we have $\epsilon_{X, n} \leq k_{X, n} 2^{1-p}$ for $X \in \{ R, I \}$,
 and by Proposition~\ref {prop:comrelerror},
@@ -873,6 +999,39 @@ Using the same notation and assumptions as at the end of
 or higher powers) are absorbed by $2^{\Exp (\appro x) - p}$,
 we find the exact same error estimate \eqref {eq:propmulcomrel}
 also for the case of division.
+
+
+\subsubsection {Square root}
+Let
+\[
+\appro z = \sqrt {\appro {z_1}}.
+\]
+Write $\corr {z_1} = (1 + \theta_1) \appro {z_1}$ with
+$\epsilon_1 = |\theta_1|$, and assume $\epsilon_1 < 1$.
+Then $\corr z = (1 + \theta) \appro z$ with
+\[
+\theta = \sqrt {1 + \theta_1} - 1
+= \frac {1}{2} \theta_1
++ \sum_{n=2}^\infty \frac {(-1)^{n+1} 1 \cdot 3 \cdots (2 n - 3)}{2^n \, n!}
+   \theta_1^n
+\]
+as a Taylor series, and
+\[
+\epsilon = |\theta|
+\leq
+\frac {1}{2}  \epsilon_1
++ \sum_{n=2}^\infty \frac {1 \cdot 3 \cdots (2 n - 3)}{2^n \, n!}
+\epsilon_1^n
+= 1 - \sqrt {1 - \epsilon_1}.
+\]
+By the mean value theorem, applied to the function $f (x) = \sqrt {1 - x}$,
+there is $0 < \xi < \epsilon_1$ with
+\begin {equation}
+\label {eq:propsqrt}
+\epsilon = \frac {1}{2 \sqrt {1 - \xi}} \, \epsilon_1
+\leq \frac {1}{2 \sqrt {1 - \epsilon_1}} \, \epsilon_1.
+\end {equation}
+For instance $\epsilon \leq \epsilon_1$ for $\epsilon_1 \leq \frac {3}{4}$.
 
 
 \subsubsection {Logarithm}
@@ -1729,6 +1888,149 @@ $|\eta| \leq 2^{-p}$.
 Thus, assuming that $n 2^{-p} \leq 1$, the error estimates
 \eqref {eq:powui_re} and \eqref {eq:powui_im} are valid with $n$
 in the place of $n - 1$.
+
+\subsection{\texttt {mpc\_agm1}}
+
+Let
+\[
+z = \AGM (1, z_1);
+\]
+for the time being, we assume $\Re (z_1) \geq 0$ and $\Im (z_1) > 0$.
+
+Let $\corr {a_0} = \appro {a_0} = 1$,
+$\corr {b_0} = \appro {b_0} = z_1$, and let
+$\corr {a_n} = \frac {\corr {a_{n-1}} + \corr {b_{n-1}}}{2}$ and
+$\corr {b_n} = \sqrt {\corr {a_{n-1}} \corr {b_{n-1}}}$
+be the values of the AGM iteration performed with infinite precision and
+$\appro {a_n}, \appro {b_n}$ those performed with $p$-bit precision
+and some fixed rounding mode; let $c = \frac {1}{2}$ if this rounding mode
+is to nearest, $c = 1$ otherwise.
+Let $\eta_n = \relerror (\appro {a_n})$ and
+$\epsilon_n = \relerror (\appro {b_n})$.
+
+Let $c_n = \frac {\appro {a_{n-1}} + \appro {b_{n-1}}}{2}$, so that
+$\appro {a_n} = \round(c_n)$. By \eqref {eq:propaddrel}, the error of
+$c_n$ (relative to the correct value $a_n$) is bounded above by
+$\sqrt 2 \, \max (\epsilon_{n-1}, \eta_{n-1})$, division by~$2$ being exact.
+After rounding, we obtain
+\begin {equation}
+\label {eq:agmeta}
+\eta_n \leq
+\sqrt 2 \, \max (\eta_{n-1}, \epsilon_{n-1})
++ c \left( 1 + \sqrt 2 \, \max (\eta_{n-1}, \epsilon_{n-1}) \right) 2^{1-p}
+\end {equation}
+by Proposition~\ref {prop:comrelround}.
+
+Let $d_n = \round \left( \appro {a_{n-1}} \appro {b_{n-1}} \right)$.
+Then by \eqref {eq:propmulrel} and Proposition~\ref {prop:comrelround},
+the error of $d_n$ (relative to $a_{n-1} b_{n-1}$) is bounded above by
+\begin {equation}
+\label {eq:agmzeta}
+\zeta_n =
+\eta_{n-1} + \epsilon_{n-1} + \eta_{n-1} \epsilon_{n-1}
++ c (1 + \eta_{n-1} + \epsilon_{n-1} + \eta_{n-1} \epsilon_{n-1}) 2^{1-p}.
+\end {equation}
+Now $\appro {b_n} = \round (\sqrt {d_n})$, and by \eqref {eq:propsqrt}
+and Proposition~\ref {prop:comrelround},
+assuming $\zeta_n \leq \frac {3}{4}$,
+we obtain
+\begin {equation}
+\label {eq:agmepsilon}
+\epsilon_n \leq
+\zeta_n + c (1 + \zeta_n) 2^{1-p}.
+\end {equation}
+
+Let $r_n = (2^n - 1) d$ for some $d > 2 c$. Then for a sufficiently high
+precision~$p$ and not too many steps~$n$ compared to~$p$, we have
+$\eta_n, \epsilon_n \leq r_n 2^{1-p}$.
+For instance, $c=1$ and $d=4$ is compatible with any rounding mode, and
+we show
+$\eta_n, \epsilon_n \leq r_n 2^{1-p} \leq 2^{n + 3 -p}$
+by induction over \eqref {eq:agmeta}, \eqref {eq:agmzeta}
+and~\eqref {eq:agmepsilon}. For $n = 0$, we have $\eta_0 = \epsilon_0 = 0$.
+Inductively, by \eqref {eq:agmzeta} we obtain
+\[
+\frac {\zeta_n}{2^{1-p}} \leq
+2 r_{n-1} + 1 +
+\left( r_{n-1}^2 + 2 r_{n-1} + r_{n-1}^2 2^{1-p} \right) 2^{1-p}
+\leq
+r_n - 3 + 2^{2n+4-p}
+\leq
+r_n - 2
+\]
+as long as $2n+4 \leq p$. Then by \eqref {eq:agmepsilon},
+\[
+\frac {\epsilon_n}{2^{1-p}} \leq
+r_n - 1 + r_n 2^{1-p}
+\leq
+r_n - 1 + 2^{n+3-p}
+\leq r_n
+\]
+under a milder than the previous condition. Finally by \eqref {eq:agmeta},
+\[
+\frac {\eta_n}{2^{1-p}} \leq
+\sqrt 2 \, r_{n-1} + 1 + \sqrt {2} \, r_{n-1} 2^{1-p}
+\leq r_n
+\]
+under an even less restrictive condition.
+
+To summarise, we have
+\begin {equation}
+\label {eq:propagm}
+\corr {a_n} = (1 + \theta_1) \appro {a_n}
+\text { with }
+|\theta_1| \leq 2^{n + 3 - p}
+\text { for }
+2n+4 \leq p.
+\end {equation}
+
+We now use \cite[Prop.~3.3]{Dupont06}, which states that for
+$z_1 \neq 0, 1$,
+\[
+n \geq B (N, z_1)
+  = \max \left( 1, \left\lceil \log_2 |\log_2 |z_1|| \right\rceil \right)
+       + \lceil \log_2 (N+4) \rceil + 2
+\]
+(where $\log_2 0$ is to be understood as $- \infty$),
+we have
+\[
+a_n = (1 + \theta_2) z
+\text { with }
+|\theta_2| \leq 2^{-(N+2)}.
+\]
+So taking $\appro z = \appro {a_n}$ as an approximation for $z$, we obtain
+$z = \frac {1 + \theta_1}{1 + \theta_2} \appro z
+= (1 + \theta) \appro z$ with
+\[
+|\theta| \leq \frac {|\theta_1| + |\theta_2|}{|1 - |\theta_2||}
+\leq 2 \left( 2^{n+3-p} + 2^{-(N+2)} \right)
+\]
+(see the computation at the end of \S\ref {sssec:propdiv}).
+
+So after $n = B (N, z_1)$ steps of the AGM iteration at a working precision
+of $p = N + n + 5$, we obtain $\appro z = \appro {a_n}$ with a relative error
+bounded by $2^{-N}$.
+
+Using Propositions~\ref {prop:comrelerror} and~\ref {prop:relerror}, this
+complex relative error may be translated into an error expressed in $\Ulp$.
+With $\appro {z} = \appro x + i \appro y$, let
+$k_R = \max (\Exp (\appro y) - \Exp (\appro x) + 1, 0) + 1$,
+$k_I = \max (\Exp (\appro x) - \Exp (\appro y) + 1, 0) + 1$ and
+$k = \max (k_R, k_I)$.
+Then we have
+$\error (\appro x) \leq 2^{k_R - N + p} \Ulp (\appro x)$ and
+$\error (\appro y) \leq 2^{k_I - N + p} \Ulp (\appro y)$.
+
+In practice, one should take this additional loss into account: In a first
+loop, one may use an arbitrary guess for~$k$; if rounding fails after the
+first computation, one has nevertheless obtained the correct value of~$k$.
+Then after $n = B (N + k, z_1)$ steps of the AGM iteration at a working
+precision of $p = N + k + n + 5$, one has
+$\error (\appro x)
+\leq 2^{p - N - (k - k_R)} \Ulp (\appro x) \leq 2^{p - N} \Ulp (\appro x)$
+and
+$\error (\appro y)
+\leq 2^{p - N - (k - k_I)} \Ulp (\appro y) \leq 2^{p - N} \Ulp (\appro y)$.
 
 
 
