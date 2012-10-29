@@ -24,16 +24,11 @@ along with this program. If not, see http://www.gnu.org/licenses/ .
 #include "gmp.h"
 #include "mpfr.h"
 
-/* Backwards compatibility with mpfr<3.0.0 */
-#ifndef mpfr_exp_t
-#define mpfr_exp_t mp_exp_t
-#endif
-
 /* Define MPC version number */
 #define MPC_VERSION_MAJOR 1
-#define MPC_VERSION_MINOR 0
+#define MPC_VERSION_MINOR 1
 #define MPC_VERSION_PATCHLEVEL 0
-#define MPC_VERSION_STRING "1.0.0dev"
+#define MPC_VERSION_STRING "1.1dev"
 
 /* Macros dealing with MPC VERSION */
 #define MPC_VERSION_NUM(a,b,c) (((a) << 16L) | ((b) << 8) | (c))
@@ -74,29 +69,29 @@ along with this program. If not, see http://www.gnu.org/licenses/ .
    we reserve four bits for a real rounding mode.  */
 typedef int mpc_rnd_t;
 
-#define RNDC(r1,r2) (((int)(r1)) + ((int)(r2) << 4))
+#define MPC_RND(r1,r2) (((int)(r1)) + ((int)(r2) << 4))
 #define MPC_RND_RE(x) ((mpfr_rnd_t)((x) & 0x0F))
 #define MPC_RND_IM(x) ((mpfr_rnd_t)((x) >> 4))
 
-#define MPC_RNDNN RNDC(GMP_RNDN,GMP_RNDN)
-#define MPC_RNDNZ RNDC(GMP_RNDN,GMP_RNDZ)
-#define MPC_RNDNU RNDC(GMP_RNDN,GMP_RNDU)
-#define MPC_RNDND RNDC(GMP_RNDN,GMP_RNDD)
+#define MPC_RNDNN MPC_RND (MPFR_RNDN,MPFR_RNDN)
+#define MPC_RNDNZ MPC_RND (MPFR_RNDN,MPFR_RNDZ)
+#define MPC_RNDNU MPC_RND (MPFR_RNDN,MPFR_RNDU)
+#define MPC_RNDND MPC_RND (MPFR_RNDN,MPFR_RNDD)
 
-#define MPC_RNDZN RNDC(GMP_RNDZ,GMP_RNDN)
-#define MPC_RNDZZ RNDC(GMP_RNDZ,GMP_RNDZ)
-#define MPC_RNDZU RNDC(GMP_RNDZ,GMP_RNDU)
-#define MPC_RNDZD RNDC(GMP_RNDZ,GMP_RNDD)
+#define MPC_RNDZN MPC_RND (MPFR_RNDZ,MPFR_RNDN)
+#define MPC_RNDZZ MPC_RND (MPFR_RNDZ,MPFR_RNDZ)
+#define MPC_RNDZU MPC_RND (MPFR_RNDZ,MPFR_RNDU)
+#define MPC_RNDZD MPC_RND (MPFR_RNDZ,MPFR_RNDD)
 
-#define MPC_RNDUN RNDC(GMP_RNDU,GMP_RNDN)
-#define MPC_RNDUZ RNDC(GMP_RNDU,GMP_RNDZ)
-#define MPC_RNDUU RNDC(GMP_RNDU,GMP_RNDU)
-#define MPC_RNDUD RNDC(GMP_RNDU,GMP_RNDD)
+#define MPC_RNDUN MPC_RND (MPFR_RNDU,MPFR_RNDN)
+#define MPC_RNDUZ MPC_RND (MPFR_RNDU,MPFR_RNDZ)
+#define MPC_RNDUU MPC_RND (MPFR_RNDU,MPFR_RNDU)
+#define MPC_RNDUD MPC_RND (MPFR_RNDU,MPFR_RNDD)
 
-#define MPC_RNDDN RNDC(GMP_RNDD,GMP_RNDN)
-#define MPC_RNDDZ RNDC(GMP_RNDD,GMP_RNDZ)
-#define MPC_RNDDU RNDC(GMP_RNDD,GMP_RNDU)
-#define MPC_RNDDD RNDC(GMP_RNDD,GMP_RNDD)
+#define MPC_RNDDN MPC_RND (MPFR_RNDD,MPFR_RNDN)
+#define MPC_RNDDZ MPC_RND (MPFR_RNDD,MPFR_RNDZ)
+#define MPC_RNDDU MPC_RND (MPFR_RNDD,MPFR_RNDU)
+#define MPC_RNDDD MPC_RND (MPFR_RNDD,MPFR_RNDD)
 
 
 /* Definitions of types and their semantics */
@@ -151,8 +146,10 @@ __MPC_DECLSPEC int  mpc_div_fr    (mpc_ptr, mpc_srcptr, mpfr_srcptr, mpc_rnd_t);
 __MPC_DECLSPEC int  mpc_fr_div    (mpc_ptr, mpfr_srcptr, mpc_srcptr, mpc_rnd_t);
 __MPC_DECLSPEC int  mpc_div_ui    (mpc_ptr, mpc_srcptr, unsigned long int, mpc_rnd_t);
 __MPC_DECLSPEC int  mpc_ui_div    (mpc_ptr, unsigned long int, mpc_srcptr, mpc_rnd_t);
-__MPC_DECLSPEC int  mpc_div_2exp  (mpc_ptr, mpc_srcptr, unsigned long int, mpc_rnd_t);
-__MPC_DECLSPEC int  mpc_mul_2exp  (mpc_ptr, mpc_srcptr, unsigned long int, mpc_rnd_t);
+__MPC_DECLSPEC int  mpc_div_2ui   (mpc_ptr, mpc_srcptr, unsigned long int, mpc_rnd_t);
+__MPC_DECLSPEC int  mpc_mul_2ui   (mpc_ptr, mpc_srcptr, unsigned long int, mpc_rnd_t);
+__MPC_DECLSPEC int  mpc_div_2si   (mpc_ptr, mpc_srcptr, long int, mpc_rnd_t);
+__MPC_DECLSPEC int  mpc_mul_2si   (mpc_ptr, mpc_srcptr, long int, mpc_rnd_t);
 __MPC_DECLSPEC int  mpc_conj      (mpc_ptr, mpc_srcptr, mpc_rnd_t);
 __MPC_DECLSPEC int  mpc_neg       (mpc_ptr, mpc_srcptr, mpc_rnd_t);
 __MPC_DECLSPEC int  mpc_norm      (mpfr_ptr, mpc_srcptr, mpfr_rnd_t);

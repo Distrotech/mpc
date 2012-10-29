@@ -26,7 +26,7 @@ tpl_read_mpc_rnd (mpc_datafile_context_t* datafile_context, mpc_rnd_t* rnd)
    mpfr_rnd_t re, im;
    tpl_read_mpfr_rnd (datafile_context, &re);
    tpl_read_mpfr_rnd (datafile_context, &im);
-   *rnd = RNDC (re, im);
+   *rnd = MPC_RND (re, im);
 }
 
 void

@@ -37,7 +37,7 @@ check_ternary_value (void)
       mpc_set_prec (y, prec);
 
       mpc_set_ui (x, 1, MPC_RNDNN);
-      mpc_mul_2exp (x, x, (unsigned long int) prec, MPC_RNDNN);
+      mpc_mul_2ui (x, x, (unsigned long int) prec, MPC_RNDNN);
       mpc_set_ui (y, 1, MPC_RNDNN);
 
       if (mpc_add (z, x, y, MPC_RNDNN) == 0)

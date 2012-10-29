@@ -1,6 +1,6 @@
-/* mpc_div_fr -- Divide a complex number by a floating-point number.
+/* tmul_2ui -- test file for mpc_mul_2ui.
 
-Copyright (C) 2002, 2008, 2009, 2010, 2011, 2012 INRIA
+Copyright (C) 2008, 2012 INRIA
 
 This file is part of GNU MPC.
 
@@ -18,22 +18,18 @@ You should have received a copy of the GNU Lesser General Public License
 along with this program. If not, see http://www.gnu.org/licenses/ .
 */
 
-#include "mpc-impl.h"
+#include "mpc-tests.h"
 
 int
-mpc_div_fr (mpc_ptr a, mpc_srcptr b, mpfr_srcptr c, mpc_rnd_t rnd)
+main (void)
 {
-  int inex_re, inex_im;
-  mpfr_t real;
+  DECL_FUNC (CCU, f, mpc_mul_2ui);
 
-  /* We have to use temporary variable in case c=mpc_realref (a). */
-  mpfr_init2 (real, MPC_PREC_RE (a));
+  test_start ();
 
-  inex_re = mpfr_div (real, mpc_realref(b), c, MPC_RND_RE(rnd));
-  inex_im = mpfr_div (mpc_imagref(a), mpc_imagref(b), c, MPC_RND_IM(rnd));
-  mpfr_set (mpc_realref (a), real, MPFR_RNDN);
+  tgeneric (f, 2, 1024, 7, -1);
 
-  mpfr_clear (real);
+  test_end ();
 
-  return MPC_INEX(inex_re, inex_im);
+  return 0;
 }

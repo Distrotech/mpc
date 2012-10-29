@@ -1,6 +1,6 @@
 /* read_data.c -- Read data file and check function.
 
-Copyright (C) 2008, 2009, 2010, 2011 INRIA
+Copyright (C) 2008, 2009, 2010, 2011, 2012 INRIA
 
 This file is part of GNU MPC.
 
@@ -41,7 +41,7 @@ int nextchar;
     : (inex) == -1 ? "-1" : "0"
 
 static const char *mpfr_rnd_mode [] =
-  { "GMP_RNDN", "GMP_RNDZ", "GMP_RNDU", "GMP_RNDD" };
+  { "MPFR_RNDN", "MPFR_RNDZ", "MPFR_RNDU", "MPFR_RNDD" };
 
 const char *rnd_mode[] =
   { "MPC_RNDNN", "MPC_RNDZN", "MPC_RNDUN", "MPC_RNDDN",
@@ -238,16 +238,16 @@ read_mpfr_rounding_mode (FILE *fp, mpfr_rnd_t* rnd)
   switch (nextchar)
     {
     case 'n': case 'N':
-      *rnd = GMP_RNDN;
+      *rnd = MPFR_RNDN;
       break;
     case 'z': case 'Z':
-      *rnd = GMP_RNDZ;
+      *rnd = MPFR_RNDZ;
       break;
     case 'u': case 'U':
-      *rnd = GMP_RNDU;
+      *rnd = MPFR_RNDU;
       break;
     case 'd': case 'D':
-      *rnd = GMP_RNDD;
+      *rnd = MPFR_RNDD;
       break;
     default:
       printf ("Error: Unexpected rounding mode '%c' in file '%s' line %lu\n",
@@ -271,7 +271,7 @@ read_mpc_rounding_mode (FILE *fp, mpc_rnd_t* rnd)
    mpfr_rnd_t re, im;
    read_mpfr_rounding_mode (fp, &re);
    read_mpfr_rounding_mode (fp, &im);
-   *rnd = RNDC (re, im);
+   *rnd = MPC_RND (re, im);
 }
 
 void
@@ -382,7 +382,7 @@ read_mpfr_mantissa (FILE *fp, mpfr_ptr x)
       exit (1);
    }
    ungetc (nextchar, fp);
-   if (mpfr_inp_str (x, fp, 0, GMP_RNDN) == 0) {
+   if (mpfr_inp_str (x, fp, 0, MPFR_RNDN) == 0) {
       printf ("Error: Impossible to read mpfr mantissa "
               "in file '%s' line %lu\n",
               pathname, line_number);
@@ -419,10 +419,10 @@ read_mpc (FILE *fp, mpc_ptr z, known_signs_t *ks)
 static void
 check_compatible (int inex, mpfr_t expected, mpfr_rnd_t rnd, const char *s)
 {
-  if ((rnd == GMP_RNDU && inex == -1) ||
-      (rnd == GMP_RNDD && inex == +1) ||
-      (rnd == GMP_RNDZ && !mpfr_signbit (expected) && inex == +1) ||
-      (rnd == GMP_RNDZ && mpfr_signbit (expected) && inex == -1))
+  if ((rnd == MPFR_RNDU && inex == -1) ||
+      (rnd == MPFR_RNDD && inex == +1) ||
+      (rnd == MPFR_RNDZ && !mpfr_signbit (expected) && inex == +1) ||
+      (rnd == MPFR_RNDZ && mpfr_signbit (expected) && inex == -1))
     {
       if (s != NULL)
         printf ("Incompatible ternary value '%c' (%s part) in file '%s' line %lu\n",
@@ -594,56 +594,56 @@ set_mpfr_flags (int counter)
 static void
 check_mpfr_flags (int counter)
 {
-  int old, new;
+  int old, neu;
 
   old = (counter & 1) != 0;
-  new = mpfr_underflow_p () != 0;
-  if (old && (new == 0))
+  neu = mpfr_underflow_p () != 0;
+  if (old && (neu == 0))
     {
       printf ("Error, underflow flag has been modified from %d to %d\n",
-              old, new);
+              old, neu);
       exit (1);
     }
   old = (counter & 2) != 0;
-  new = mpfr_overflow_p () != 0;
-  if (old && (new == 0))
+  neu = mpfr_overflow_p () != 0;
+  if (old && (neu == 0))
     {
       printf ("Error, overflow flag has been modified from %d to %d\n",
-              old, new);
+              old, neu);
       exit (1);
     }
 #ifdef mpfr_divby0_p
   old = (counter & 4) != 0;
-  new = mpfr_divby0_p () != 0;
-  if (old && (new == 0))
+  neu = mpfr_divby0_p () != 0;
+  if (old && (neu == 0))
     {
       printf ("Error, divby0 flag has been modified from %d to %d\n",
-              old, new);
+              old, neu);
       exit (1);
     }
 #endif
   old = (counter & 8) != 0;
-  new = mpfr_nanflag_p () != 0;
-  if (old && (new == 0))
+  neu = mpfr_nanflag_p () != 0;
+  if (old && (neu == 0))
     {
       printf ("Error, nanflag flag has been modified from %d to %d\n",
-              old, new);
+              old, neu);
       exit (1);
     }
   old = (counter & 16) != 0;
-  new = mpfr_inexflag_p () != 0;
-  if (old && (new == 0))
+  neu = mpfr_inexflag_p () != 0;
+  if (old && (neu == 0))
     {
       printf ("Error, inexflag flag has been modified from %d to %d\n",
-              old, new);
+              old, neu);
       exit (1);
     }
   old = (counter & 32) != 0;
-  new = mpfr_erangeflag_p () != 0;
-  if (old && (new == 0))
+  neu = mpfr_erangeflag_p () != 0;
+  if (old && (neu == 0))
     {
       printf ("Error, erangeflag flag has been modified from %d to %d\n",
-              old, new);
+              old, neu);
       exit (1);
     }
 }
@@ -657,7 +657,7 @@ data_check (mpc_function function, const char *file_name)
 
   int inex_re;
   mpfr_t x1, x2;
-  mpfr_rnd_t mpfr_rnd = GMP_RNDN;
+  mpfr_rnd_t mpfr_rnd = MPFR_RNDN;
   int sign_real;
 
   int inex_im;

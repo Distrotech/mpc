@@ -1,4 +1,4 @@
-# Copyright (C) 2008, 2009, 2010, 2011 INRIA
+# Copyright (C) 2008, 2009, 2010, 2011, 2012 INRIA
 #
 # This file is part of GNU MPC.
 #
@@ -20,17 +20,19 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT(mpc, 1.0.0dev, mpc-discuss@lists.gforge.inria.fr)
+AC_INIT(mpc, 1.1dev, mpc-discuss@lists.gforge.inria.fr)
 AC_CONFIG_SRCDIR([src/mpc-impl.h])
 AC_CONFIG_HEADER([config.h])
 
 AM_INIT_AUTOMAKE([1.9 -Wall -Werror])
 AM_MAINTAINER_MODE
-# automake 1.12 seems to require this, but automake 1.11 doesn't recognize it
-m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
+
+USER_CC=$CC
+USER_CFLAGS=$CFLAGS
 
 AC_CANONICAL_HOST
 AC_CONFIG_MACRO_DIR([m4])
+
 
 # Extra arguments to configure
 AC_ARG_WITH([mpfr_include],
@@ -98,13 +100,16 @@ AC_ARG_ENABLE([valgrind-tests],
 # at http://lists.gforge.inria.fr/pipermail/mpc-discuss/2012-January/001056.html
 AC_PROG_EGREP
 AC_PROG_SED
-if test -z "$CC" && test -z "$CFLAGS"; then
+if test -z "$USER_CC" && test -z "$USER_CFLAGS"; then
    MPC_GMP_CC_CFLAGS
 fi
 
 # Setup CC and CFLAGS
 AC_PROG_CC
 AC_LANG(C)
+
+# automake 1.12 seems to require this, but automake 1.11 doesn't recognize it
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
 # Set up LibTool
 LT_INIT
@@ -118,11 +123,12 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
  AC_MSG_ERROR([gmp.h cannot be found or is unusable.])
 ])
 
-# Check if compiler accepts warning flags and add them to CFLAGS
+# Check (only in development versions) if the compiler accepts warning
+# flags and add them to CFLAGS
 # Note: don't do this if the user defined CFLAGS, since adding new flags
 # might override the user's settings, see
 # http://lists.gforge.inria.fr/pipermail/mpc-discuss/2012-May/001115.html
-if test -z "$CFLAGS"; then
+if test -z "$USER_CFLAGS"; then
    MPC_C_CHECK_WARNINGCFLAGS
 fi
 
@@ -181,23 +187,22 @@ error
         AC_MSG_ERROR([GMP version >= 4.3.2 required])
         ])
 
-# Check for a recent MPFR: we require MPFR 2.4.2 so that the tests
-# in log.dat pass
+# Check for a recent MPFR: we require MPFR 3.0.0 for MPC_RNDA
 # The same remark as above for GMP applies.
 AC_MSG_CHECKING(for recent MPFR)
 AC_COMPILE_IFELSE(
         [AC_LANG_SOURCE(
         [[
 #include "mpfr.h"
-#if (MPFR_VERSION < MPFR_VERSION_NUM (2,4,2))
-# error "Minimal MPFR version is 2.4.2"
+#if (MPFR_VERSION < MPFR_VERSION_NUM (3,0,0))
+# error "Minimal MPFR version is 3.0.0"
 error
 #endif
         ]])],
         [AC_MSG_RESULT(yes)],
         [
          AC_MSG_RESULT(no)
-         AC_MSG_ERROR([MPFR version >= 2.4.2 required])
+         AC_MSG_ERROR([MPFR version >= 3.0.0 required])
          ])
 
 # Check for logging feature
