@@ -1,4 +1,4 @@
-/* Data_check.tpl -- template file for checking result against data
+/* data_check.tpl -- template file for checking result against data
    file.
 
    Usage: Before including this template file in your source file,
@@ -31,6 +31,10 @@ along with this program. If not, see http://www.gnu.org/licenses/ .
 */
 
 #include "templates.h"
+
+#ifndef MPC_FUNCTION_CALL
+#error Define MPC_FUNCTION_CALL before including 'data_check.tpl'. 
+#endif
 
 int
 data_check_template (const char* descr_file, const char * data_file)
