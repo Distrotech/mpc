@@ -124,6 +124,8 @@ void    tpl_read_ui         (mpc_datafile_context_t* datafile_context,
                              unsigned long int *ui);
 void    tpl_read_si         (mpc_datafile_context_t* datafile_context,
                              long int *si);
+void    tpl_read_mpz        (mpc_datafile_context_t* datafile_context,
+                             mpz_ptr z);
 void    tpl_skip_whitespace_comments (mpc_datafile_context_t* datafile_context);
 void    tpl_read_ternary    (mpc_datafile_context_t* datafile_context,
                              int* ternary);
@@ -142,12 +144,14 @@ void    tpl_read_mpc_rnd    (mpc_datafile_context_t* datafile_context,
 
 int     tpl_same_mpfr_value (mpfr_ptr x1, mpfr_ptr x2, int known_sign);
 int     tpl_same_mpc_value  (mpc_ptr z1, mpc_ptr z2, known_signs_t known_signs);
+int     tpl_same_mpz_value  (mpz_ptr z1, mpz_ptr z2);
 
 void    tpl_copy_int        (int *dest, const int * const src);
 void    tpl_copy_ui         (unsigned long int *dest,
                              const unsigned long int * const src);
 void    tpl_copy_si         (long int *dest, const long int * const src);
 void    tpl_copy_d          (double *dest, const double * const src);
+void    tpl_copy_mpz        (mpz_ptr dest, mpz_srcptr src);
 void    tpl_copy_mpfr       (mpfr_ptr dest, mpfr_srcptr src);
 void    tpl_copy_mpc        (mpc_ptr dest, mpc_srcptr src);
 

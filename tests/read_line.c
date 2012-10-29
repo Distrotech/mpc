@@ -40,9 +40,13 @@ read_param  (mpc_datafile_context_t* datafile_context,
       /* TODO */
     case NATIVE_D:
       break;
+#endif
 
     case GMP_Z:
+      tpl_read_mpz (datafile_context, &(p->mpz));
       break;
+#if 0
+      /* TODO */
     case GMP_Q:
       break;
     case GMP_F:
