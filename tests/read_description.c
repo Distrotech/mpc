@@ -222,14 +222,14 @@ read_keyworddesc (mpc_datafile_context_t* datafile_context, char **buffer_ptr, s
     {
       if (pos + 1 > buffer_length)
         {
-          if (buffer_length==0) buffer_length = pos;
+          if (buffer_length==0) buffer_length = pos + 1;
           buffer = (char *) realloc (buffer, 2 * buffer_length);
+          buffer_length *= 2;
           if (buffer == NULL)
             {
               printf ("Cannot allocate memory\n");
               exit (1);
             }
-          buffer_length *= 2;
         }
       buffer[pos++] = (char) datafile_context->nextchar;
       datafile_context->nextchar = getc (datafile_context->fd);
@@ -239,12 +239,12 @@ read_keyworddesc (mpc_datafile_context_t* datafile_context, char **buffer_ptr, s
   if (pos + 1 > buffer_length)
     {
       buffer = (char *) realloc (buffer, buffer_length + 1);
+      buffer_length++;
       if (buffer == NULL)
         {
           printf ("Cannot allocate memory\n");
           exit (1);
         }
-      buffer_length *= 2;
     }
   buffer[pos] = '\0';
   
