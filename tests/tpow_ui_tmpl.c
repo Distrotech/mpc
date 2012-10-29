@@ -85,8 +85,6 @@ main (int argc, char *argv[])
 {
   mpc_t z;
 
-  DECL_FUNC (CCU, f, mpc_pow_ui);
-
   if (argc != 1)
     {
       mpfr_prec_t p;

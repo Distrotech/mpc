@@ -86,8 +86,6 @@ compare_mpc_pow (mpfr_prec_t pmax, int iter, unsigned long nbits)
 int
 main (void)
 {
-  DECL_FUNC (CCS, f, mpc_pow_si);
-
   test_start ();
 
   data_check_template ("pow_si.dsc", "pow_si.dat");
