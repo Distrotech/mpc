@@ -145,7 +145,7 @@ read_description (mpc_fun_param_t* param, const char *filename)
     len = 0;
     len = read_keyworddesc (&datafile_context, &buffer, len, filename);
     if (buffer==NULL || strcmp(buffer,"RETURN:")!=0) {
-        printf ("Error: Unable to read 'NAME:' in file '%s'\n",
+        printf ("Error: Unable to read 'RETURN:' in file '%s'\n",
           pathname);
         exit (1);
     }
